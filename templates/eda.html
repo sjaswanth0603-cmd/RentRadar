@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RentRadar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+    <h1>RentRadar</h1>
+</header>
+
+<div class="layout">
+    <nav class="sidebar">
+        <ul>
+            <li>
+                <a href="{{ url_for('data_loading') }}"
+                   class="menu-item {% if active == 'data-loading' %}active{% endif %}">
+                    Data Loading
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('eda') }}"
+                   class="menu-item {% if active == 'eda' %}active{% endif %}">
+                    EDA
+                </a>
+            </li>
+            <li class="menu-item disabled">Preprocessing (coming soon)</li>
+            <li class="menu-item disabled">Model Training (coming soon)</li>
+            <li class="menu-item disabled">Prediction (coming soon)</li>
+        </ul>
+    </nav>
+
+    <main class="content">
+        <h2>Exploratory Data Analysis</h2>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if results %}
+            <table class="summary-table">
+                <tr><td>Total Rows</td><td>{{ results.n_rows }}</td></tr>
+                <tr><td>Total Columns</td><td>{{ results.n_cols }}</td></tr>
+                <tr><td>Duplicate Rows</td><td>{{ results.duplicate_count }}</td></tr>
+                <tr><td>Duplicate IDs</td><td>{{ results.duplicate_id_count }}</td></tr>
+            </table>
+
+            <h3>Rows by Dataset</h3>
+            <table class="summary-table">
+                {% for file, count in results.source_counts.items() %}
+                <tr><td>{{ file }}</td><td>{{ count }}</td></tr>
+                {% endfor %}
+            </table>
+
+            {% if results.missing %}
+                <h3>Missing Values</h3>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Column</th><th>Missing Count</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for col, count in results.missing.items() %}
+                            <tr><td>{{ col }}</td><td>{{ count }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            <h3>Numeric Summary</h3>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th><th>Min</th><th>Max</th>
+                            <th>Mean</th><th>Median</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for col, values in results.numeric_summary.items() %}
+                        <tr>
+                            <td>{{ col }}</td>
+                            <td>{{ values.min }}</td>
+                            <td>{{ values.max }}</td>
+                            <td>{{ values.mean }}</td>
+                            <td>{{ values.median }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Charts</h3>
+            <div class="chart-grid">
+                {% for fname in results.charts %}
+                <div class="chart-card">
+                    <img src="{{ url_for('static', filename='charts/' + fname) }}" alt="{{ fname }}">
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </main>
+</div>
+
+</body>
+</html>
