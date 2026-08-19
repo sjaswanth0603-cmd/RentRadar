@@ -1,109 +1,607 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<title>RentRadar</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<title>RentRadar - EDA</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+
 </head>
+
+
 <body>
 
+
 <header class="topbar">
+
     <h1>RentRadar</h1>
+
 </header>
 
+
 <div class="layout">
+
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+
     <nav class="sidebar">
+
         <ul>
+
             <li>
-                <a href="{{ url_for('data_loading') }}"
-                   class="menu-item {% if active == 'data-loading' %}active{% endif %}">
+
+                <a
+                    href="{{ url_for('data_loading') }}"
+                    class="menu-item
+                    {% if active == 'data-loading' %}
+                        active
+                    {% endif %}"
+                >
                     Data Loading
                 </a>
+
             </li>
+
+
             <li>
-                <a href="{{ url_for('eda') }}"
-                   class="menu-item {% if active == 'eda' %}active{% endif %}">
+
+                <a
+                    href="{{ url_for('eda') }}"
+                    class="menu-item
+                    {% if active == 'eda' %}
+                        active
+                    {% endif %}"
+                >
                     EDA
                 </a>
+
             </li>
-            <li class="menu-item disabled">Preprocessing (coming soon)</li>
-            <li class="menu-item disabled">Model Training (coming soon)</li>
-            <li class="menu-item disabled">Prediction (coming soon)</li>
+
+
+            <li class="menu-item disabled">
+                Preprocessing (coming soon)
+            </li>
+
+
+            <li class="menu-item disabled">
+                Model Training (coming soon)
+            </li>
+
+
+            <li class="menu-item disabled">
+                Prediction (coming soon)
+            </li>
+
         </ul>
+
     </nav>
 
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
     <main class="content">
-        <h2>Exploratory Data Analysis</h2>
+
+
+        <h2>
+            Exploratory Data Analysis
+        </h2>
+
+
+        <!-- ERROR MESSAGE -->
 
         {% if error %}
-            <div class="error">{{ error }}</div>
+
+            <div class="error">
+                {{ error }}
+            </div>
+
         {% endif %}
+
+
 
         {% if results %}
-            <table class="summary-table">
-                <tr><td>Total Rows</td><td>{{ results.n_rows }}</td></tr>
-                <tr><td>Total Columns</td><td>{{ results.n_cols }}</td></tr>
-                <tr><td>Duplicate Rows</td><td>{{ results.duplicate_count }}</td></tr>
-                <tr><td>Duplicate IDs</td><td>{{ results.duplicate_id_count }}</td></tr>
-            </table>
 
-            <h3>Rows by Dataset</h3>
-            <table class="summary-table">
+
+        <!-- =================================================
+             DATASET OVERVIEW
+             ================================================= -->
+
+        <h3>
+            Dataset Overview
+        </h3>
+
+
+        <table class="summary-table">
+
+            <tr>
+
+                <td>
+                    Total Rows
+                </td>
+
+                <td>
+                    {{ "{:,}".format(results.n_rows) }}
+                </td>
+
+            </tr>
+
+
+            <tr>
+
+                <td>
+                    Total Columns
+                </td>
+
+                <td>
+                    {{ results.n_cols }}
+                </td>
+
+            </tr>
+
+
+            <tr>
+
+                <td>
+                    Duplicate Rows
+                </td>
+
+                <td>
+                    {{ "{:,}".format(results.duplicate_count) }}
+                </td>
+
+            </tr>
+
+
+            <tr>
+
+                <td>
+                    Duplicate IDs
+                </td>
+
+                <td>
+                    {{ "{:,}".format(results.duplicate_id_count) }}
+                </td>
+
+            </tr>
+
+        </table>
+
+
+
+        <!-- =================================================
+             DATASET SOURCES
+             ================================================= -->
+
+        <h3>
+            Rows by Dataset
+        </h3>
+
+
+        <div class="table-wrapper">
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Dataset
+                        </th>
+
+                        <th>
+                            Number of Rows
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
                 {% for file, count in results.source_counts.items() %}
-                <tr><td>{{ file }}</td><td>{{ count }}</td></tr>
+
+                    <tr>
+
+                        <td>
+                            {{ file }}
+                        </td>
+
+                        <td>
+                            {{ "{:,}".format(count) }}
+                        </td>
+
+                    </tr>
+
                 {% endfor %}
+
+                </tbody>
+
             </table>
 
-            {% if results.missing %}
-                <h3>Missing Values</h3>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr><th>Column</th><th>Missing Count</th></tr>
-                        </thead>
-                        <tbody>
-                        {% for col, count in results.missing.items() %}
-                            <tr><td>{{ col }}</td><td>{{ count }}</td></tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
+        </div>
 
-            <h3>Numeric Summary</h3>
+
+
+        <!-- =================================================
+             MISSING VALUES
+             ================================================= -->
+
+        {% if results.missing %}
+
+            <h3>
+                Missing Values
+            </h3>
+
+
             <div class="table-wrapper">
+
                 <table class="data-table">
+
                     <thead>
+
                         <tr>
-                            <th>Feature</th><th>Min</th><th>Max</th>
-                            <th>Mean</th><th>Median</th>
+
+                            <th>
+                                Column
+                            </th>
+
+                            <th>
+                                Missing Count
+                            </th>
+
+                            <th>
+                                Missing Percentage
+                            </th>
+
                         </tr>
+
                     </thead>
+
+
                     <tbody>
-                    {% for col, values in results.numeric_summary.items() %}
+
+                    {% for col, count in results.missing.items() %}
+
                         <tr>
-                            <td>{{ col }}</td>
-                            <td>{{ values.min }}</td>
-                            <td>{{ values.max }}</td>
-                            <td>{{ values.mean }}</td>
-                            <td>{{ values.median }}</td>
+
+                            <td>
+                                {{ col }}
+                            </td>
+
+                            <td>
+                                {{ "{:,}".format(count) }}
+                            </td>
+
+                            <td>
+
+                                {{
+                                    "%.2f"|format(
+                                        (count / results.n_rows) * 100
+                                    )
+                                }}%
+
+                            </td>
+
                         </tr>
+
                     {% endfor %}
+
                     </tbody>
+
                 </table>
+
             </div>
 
-            <h3>Charts</h3>
-            <div class="chart-grid">
-                {% for fname in results.charts %}
-                <div class="chart-card">
-                    <img src="{{ url_for('static', filename='charts/' + fname) }}" alt="{{ fname }}">
-                </div>
-                {% endfor %}
-            </div>
         {% endif %}
+
+
+
+        <!-- =================================================
+             OUTLIER ANALYSIS
+             ================================================= -->
+
+        <h3>
+            Outlier Analysis
+        </h3>
+
+
+        <p>
+            Outliers are identified using the
+            <strong>1.5 × IQR method</strong>.
+        </p>
+
+
+        <div class="table-wrapper">
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Feature
+                        </th>
+
+                        <th>
+                            Q1
+                        </th>
+
+                        <th>
+                            Q3
+                        </th>
+
+                        <th>
+                            IQR
+                        </th>
+
+                        <th>
+                            Lower Limit
+                        </th>
+
+                        <th>
+                            Upper Limit
+                        </th>
+
+                        <th>
+                            Outlier Count
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for col, values in results.outlier_limits.items() %}
+
+                    <tr>
+
+                        <td>
+                            {{ col }}
+                        </td>
+
+                        <td>
+                            {{ values.q1 }}
+                        </td>
+
+                        <td>
+                            {{ values.q3 }}
+                        </td>
+
+                        <td>
+                            {{ values.iqr }}
+                        </td>
+
+                        <td>
+                            {{ values.lower }}
+                        </td>
+
+                        <td>
+                            {{ values.upper }}
+                        </td>
+
+                        <td>
+                            {{
+                                "{:,}".format(
+                                    results.outlier_counts[col]
+                                )
+                            }}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+
+        <!-- =================================================
+             NUMERIC SUMMARY
+             ================================================= -->
+
+        <h3>
+            Numeric Summary
+        </h3>
+
+
+        <div class="table-wrapper">
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Feature
+                        </th>
+
+                        <th>
+                            Minimum
+                        </th>
+
+                        <th>
+                            Maximum
+                        </th>
+
+                        <th>
+                            Mean
+                        </th>
+
+                        <th>
+                            Median
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for col, values in results.numeric_summary.items() %}
+
+                    <tr>
+
+                        <td>
+                            {{ col }}
+                        </td>
+
+                        <td>
+                            {{ values.min }}
+                        </td>
+
+                        <td>
+                            {{ values.max }}
+                        </td>
+
+                        <td>
+                            {{ values.mean }}
+                        </td>
+
+                        <td>
+                            {{ values.median }}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+
+        <!-- =================================================
+             CHARTS
+             ================================================= -->
+
+        <h3>
+            EDA Visualizations
+        </h3>
+
+
+        <div class="chart-grid">
+
+
+            {% for fname in results.charts %}
+
+
+                <div class="chart-card">
+
+
+                    <h4>
+
+                        {% if fname == "missing_values.png" %}
+                            Missing Values by Column
+
+                        {% elif fname == "price_distribution.png" %}
+                            Rental Price Distribution
+
+                        {% elif fname == "price_boxplot.png" %}
+                            Rental Price Outliers
+
+                        {% elif fname == "square_feet_distribution.png" %}
+                            Apartment Size Distribution
+
+                        {% elif fname == "square_feet_boxplot.png" %}
+                            Apartment Size Outliers
+
+                        {% elif fname == "bedrooms_distribution.png" %}
+                            Apartment Count by Bedrooms
+
+                        {% elif fname == "bedrooms_boxplot.png" %}
+                            Bedroom Outliers
+
+                        {% elif fname == "bathrooms_distribution.png" %}
+                            Apartment Count by Bathrooms
+
+                        {% elif fname == "bathrooms_boxplot.png" %}
+                            Bathroom Outliers
+
+                        {% elif fname == "top_cities.png" %}
+                            Top 15 Cities
+
+                        {% elif fname == "top_states.png" %}
+                            Top 15 States
+
+                        {% elif fname == "photo_availability.png" %}
+                            Photo Availability
+
+                        {% elif fname == "pets_allowed.png" %}
+                            Pet Policy Distribution
+
+                        {% elif fname == "price_vs_square_feet.png" %}
+                            Rental Price vs Apartment Size
+
+                        {% elif fname == "price_vs_bedrooms.png" %}
+                            Rental Price vs Bedrooms
+
+                        {% elif fname == "price_vs_bathrooms.png" %}
+                            Rental Price vs Bathrooms
+
+                        {% elif fname == "correlation_heatmap.png" %}
+                            Numeric Feature Correlation
+
+                        {% else %}
+                            {{ fname }}
+                        {% endif %}
+
+                    </h4>
+
+
+                    <img
+                        src="{{
+                            url_for(
+                                'static',
+                                filename='charts/' + fname
+                            )
+                        }}"
+                        alt="{{ fname }}"
+                    >
+
+
+                </div>
+
+
+            {% endfor %}
+
+
+        </div>
+
+
+        {% endif %}
+
+
     </main>
+
+
 </div>
 
+
 </body>
+
 </html>
