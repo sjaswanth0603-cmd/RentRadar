@@ -2,31 +2,21 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
 
-<meta charset="UTF-8">
+    <title>RentRadar - Preprocessing</title>
 
-<title>RentRadar - Preprocessing</title>
-
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
->
-
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 
 <body>
 
-
 <header class="topbar">
-
     <h1>RentRadar</h1>
-
 </header>
 
-
 <div class="layout">
-
 
     <!-- SIDEBAR -->
 
@@ -35,67 +25,36 @@
         <ul>
 
             <li>
-
-                <a
-                    href="{{ url_for('data_loading') }}"
-                    class="menu-item
-                    {% if active == 'data-loading' %}
-                    active
-                    {% endif %}"
-                >
-
+                <a href="{{ url_for('data_loading') }}"
+                   class="menu-item {% if active == 'data-loading' %}active{% endif %}">
                     Data Loading
-
                 </a>
-
             </li>
 
-
             <li>
-
-                <a
-                    href="{{ url_for('eda') }}"
-                    class="menu-item
-                    {% if active == 'eda' %}
-                    active
-                    {% endif %}"
-                >
-
+                <a href="{{ url_for('eda') }}"
+                   class="menu-item {% if active == 'eda' %}active{% endif %}">
                     EDA
-
                 </a>
-
             </li>
-
 
             <li>
-
-                <a
-                    href="{{ url_for('preprocessing') }}"
-                    class="menu-item
-                    {% if active == 'preprocessing' %}
-                    active
-                    {% endif %}"
-                >
-
+                <a href="{{ url_for('preprocessing') }}"
+                   class="menu-item {% if active == 'preprocessing' %}active{% endif %}">
                     Preprocessing
-
                 </a>
-
             </li>
 
-
-            <li class="menu-item disabled">
-
-                Model Training (coming soon)
-
+            <li>
+                <span class="menu-item disabled">
+                    Model Training (coming soon)
+                </span>
             </li>
 
-
-            <li class="menu-item disabled">
-
-                Prediction (coming soon)
-
+            <li>
+                <span class="menu-item disabled">
+                    Prediction (coming soon)
+                </span>
             </li>
 
         </ul>
@@ -107,16 +66,13 @@
 
     <main class="content">
 
-
         <h2>Data Preprocessing</h2>
 
 
         {% if error %}
 
             <div class="error">
-
                 {{ error }}
-
             </div>
 
         {% endif %}
@@ -124,80 +80,41 @@
 
         {% if results %}
 
-
             <!-- SUMMARY -->
 
             <h3>Preprocessing Summary</h3>
 
-
             <table class="summary-table">
 
-
                 <tr>
-
                     <td>Target Variable</td>
-
-                    <td>
-                        {{ results.target_name }}
-                    </td>
-
+                    <td>{{ results.target_name }}</td>
                 </tr>
 
-
                 <tr>
-
                     <td>Original Rows</td>
-
-                    <td>
-                        {{ results.original_rows }}
-                    </td>
-
+                    <td>{{ results.original_rows }}</td>
                 </tr>
 
-
                 <tr>
-
                     <td>Training Samples</td>
-
-                    <td>
-                        {{ results.training_samples }}
-                    </td>
-
+                    <td>{{ results.training_samples }}</td>
                 </tr>
 
-
                 <tr>
-
                     <td>Testing Samples</td>
-
-                    <td>
-                        {{ results.testing_samples }}
-                    </td>
-
+                    <td>{{ results.testing_samples }}</td>
                 </tr>
 
-
                 <tr>
-
                     <td>Original Features</td>
-
-                    <td>
-                        {{ results.original_features }}
-                    </td>
-
+                    <td>{{ results.original_features }}</td>
                 </tr>
-
 
                 <tr>
-
                     <td>Processed Features</td>
-
-                    <td>
-                        {{ results.processed_features }}
-                    </td>
-
+                    <td>{{ results.processed_features }}</td>
                 </tr>
-
 
             </table>
 
@@ -206,12 +123,9 @@
 
             <h3>Before Preprocessing</h3>
 
-
             <table class="summary-table">
 
-
                 <tr>
-
                     <td>Training Data</td>
 
                     <td>
@@ -219,12 +133,9 @@
                         ×
                         {{ results.original_features }}
                     </td>
-
                 </tr>
 
-
                 <tr>
-
                     <td>Testing Data</td>
 
                     <td>
@@ -232,9 +143,7 @@
                         ×
                         {{ results.original_features }}
                     </td>
-
                 </tr>
-
 
             </table>
 
@@ -243,12 +152,9 @@
 
             <h3>After Preprocessing</h3>
 
-
             <table class="summary-table">
 
-
                 <tr>
-
                     <td>Training Data</td>
 
                     <td>
@@ -256,12 +162,9 @@
                         ×
                         {{ results.processed_features }}
                     </td>
-
                 </tr>
 
-
                 <tr>
-
                     <td>Testing Data</td>
 
                     <td>
@@ -269,9 +172,7 @@
                         ×
                         {{ results.processed_features }}
                     </td>
-
                 </tr>
-
 
             </table>
 
@@ -279,7 +180,6 @@
             <!-- OPERATIONS -->
 
             <h3>Preprocessing Operations</h3>
-
 
             <div class="info-box">
 
@@ -298,7 +198,8 @@
                     </li>
 
                     <li>
-                        Categorical missing values handled using most frequent value
+                        Categorical missing values handled using
+                        most frequent value
                     </li>
 
                     <li>
@@ -314,7 +215,8 @@
                     </li>
 
                     <li>
-                        Target variable: <strong>price</strong>
+                        Target variable:
+                        <strong>price</strong>
                     </li>
 
                 </ul>
@@ -323,21 +225,14 @@
 
 
             <div class="success">
-
                 ✓ Preprocessing completed successfully.
-
             </div>
-
 
         {% endif %}
 
-
     </main>
-
 
 </div>
 
-
 </body>
-
 </html>
