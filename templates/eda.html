@@ -1,328 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>RentRadar - EDA</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+<meta charset="UTF-8">
+<title>RentRadar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
-
 <body>
 
-<!-- =====================================================
-     TOP BAR
-     ===================================================== -->
-
 <header class="topbar">
-
     <h1>RentRadar</h1>
-
 </header>
 
-
-<!-- =====================================================
-     MAIN LAYOUT
-     ===================================================== -->
-
 <div class="layout">
-
-
-    <!-- =================================================
-         SIDEBAR
-         ================================================= -->
-
     <nav class="sidebar">
-
         <ul>
-
-
-            <!-- DATA LOADING -->
-
             <li>
-
                 <a href="{{ url_for('data_loading') }}"
-                   class="menu-item
-                   {% if active == 'data-loading' %}
-                   active
-                   {% endif %}">
-
+                   class="menu-item {% if active == 'data-loading' %}active{% endif %}">
                     Data Loading
-
                 </a>
-
             </li>
-
-
-            <!-- EDA -->
-
             <li>
-
                 <a href="{{ url_for('eda') }}"
-                   class="menu-item
-                   {% if active == 'eda' %}
-                   active
-                   {% endif %}">
-
+                   class="menu-item {% if active == 'eda' %}active{% endif %}">
                     EDA
-
                 </a>
-
             </li>
-
-
-            <!-- PREPROCESSING -->
-
-            <li>
-
-                <a href="{{ url_for('preprocessing') }}"
-                   class="menu-item
-                   {% if active == 'preprocessing' %}
-                   active
-                   {% endif %}">
-
-                    Preprocessing
-
-                </a>
-
-            </li>
-
-
+            <li class="menu-item disabled">Preprocessing (coming soon)</li>
+            <li class="menu-item disabled">Model Training (coming soon)</li>
+            <li class="menu-item disabled">Prediction (coming soon)</li>
         </ul>
-
     </nav>
 
-
-    <!-- =================================================
-         MAIN CONTENT
-         ================================================= -->
-
     <main class="content">
-
-
         <h2>Exploratory Data Analysis</h2>
 
-
-        <!-- ERROR -->
-
         {% if error %}
-
-            <div class="error">
-
-                {{ error }}
-
-            </div>
-
+            <div class="error">{{ error }}</div>
         {% endif %}
-
-
-        <!-- RESULTS -->
 
         {% if results %}
-
-
-            <!-- =================================================
-                 DATASET SUMMARY
-                 ================================================= -->
-
-            <h3>Dataset Summary</h3>
-
-
             <table class="summary-table">
-
-                <tr>
-
-                    <td>Total Rows</td>
-
-                    <td>
-                        {{ results.total_rows }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>Total Columns</td>
-
-                    <td>
-                        {{ results.total_columns }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>Duplicate Rows</td>
-
-                    <td>
-                        {{ results.duplicate_rows }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>Duplicate IDs</td>
-
-                    <td>
-                        {{ results.duplicate_ids }}
-                    </td>
-
-                </tr>
-
+                <tr><td>Total Rows</td><td>{{ results.n_rows }}</td></tr>
+                <tr><td>Total Columns</td><td>{{ results.n_cols }}</td></tr>
+                <tr><td>Duplicate Rows</td><td>{{ results.duplicate_count }}</td></tr>
+                <tr><td>Duplicate IDs</td><td>{{ results.duplicate_id_count }}</td></tr>
             </table>
 
+            <h3>Rows by Dataset</h3>
+            <table class="summary-table">
+                {% for file, count in results.source_counts.items() %}
+                <tr><td>{{ file }}</td><td>{{ count }}</td></tr>
+                {% endfor %}
+            </table>
 
-            <!-- =================================================
-                 ROWS BY DATASET
-                 ================================================= -->
-
-            {% if results.rows_by_dataset %}
-
-                <h3>Rows by Dataset</h3>
-
-
-                <table class="summary-table">
-
-                    {% for dataset, rows in results.rows_by_dataset.items() %}
-
-                    <tr>
-
-                        <td>
-                            {{ dataset }}
-                        </td>
-
-                        <td>
-                            {{ rows }}
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </table>
-
-            {% endif %}
-
-
-            <!-- =================================================
-                 MISSING VALUES
-                 ================================================= -->
-
-            {% if results.missing_values %}
-
+            {% if results.missing %}
                 <h3>Missing Values</h3>
-
-
                 <div class="table-wrapper">
-
                     <table class="data-table">
-
                         <thead>
-
-                            <tr>
-
-                                <th>
-                                    Column
-                                </th>
-
-                                <th>
-                                    Missing Count
-                                </th>
-
-                            </tr>
-
+                            <tr><th>Column</th><th>Missing Count</th></tr>
                         </thead>
-
-
                         <tbody>
-
-                            {% for column, count in results.missing_values.items() %}
-
-                                {% if count > 0 %}
-
-                                <tr>
-
-                                    <td>
-                                        {{ column }}
-                                    </td>
-
-                                    <td>
-                                        {{ count }}
-                                    </td>
-
-                                </tr>
-
-                                {% endif %}
-
-                            {% endfor %}
-
+                        {% for col, count in results.missing.items() %}
+                            <tr><td>{{ col }}</td><td>{{ count }}</td></tr>
+                        {% endfor %}
                         </tbody>
-
                     </table>
-
                 </div>
-
             {% endif %}
 
-
-            <!-- =================================================
-                 CHARTS
-                 ================================================= -->
-
-            {% if results.charts %}
-
-                <h3>Visual Analysis</h3>
-
-
-                <div class="chart-grid">
-
-                    {% for chart in results.charts %}
-
-                        <div class="chart-card">
-
-                            <img
-                                src="{{ url_for('static', filename='charts/' + chart) }}"
-                                alt="EDA Chart"
-                            >
-
-                        </div>
-
+            <h3>Numeric Summary</h3>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th><th>Min</th><th>Max</th>
+                            <th>Mean</th><th>Median</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for col, values in results.numeric_summary.items() %}
+                        <tr>
+                            <td>{{ col }}</td>
+                            <td>{{ values.min }}</td>
+                            <td>{{ values.max }}</td>
+                            <td>{{ values.mean }}</td>
+                            <td>{{ values.median }}</td>
+                        </tr>
                     {% endfor %}
-
-                </div>
-
-            {% endif %}
-
-
-            <!-- =================================================
-                 SUCCESS
-                 ================================================= -->
-
-            <div class="success">
-
-                ✓ Exploratory Data Analysis completed successfully.
-
+                    </tbody>
+                </table>
             </div>
 
-
+            <h3>Charts</h3>
+            <div class="chart-grid">
+                {% for fname in results.charts %}
+                <div class="chart-card">
+                    <img src="{{ url_for('static', filename='charts/' + fname) }}" alt="{{ fname }}">
+                </div>
+                {% endfor %}
+            </div>
         {% endif %}
-
-
     </main>
-
 </div>
 
-
 </body>
-
 </html>
