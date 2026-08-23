@@ -3,14 +3,20 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<title>RentRadar - Preprocessing</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
->
+    <title>RentRadar - Data Loading</title>
+
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
 
 </head>
 
@@ -20,7 +26,9 @@
 
 <header class="topbar">
 
-    <h1>RentRadar</h1>
+    <h1>
+        RentRadar
+    </h1>
 
 </header>
 
@@ -28,11 +36,16 @@
 <div class="layout">
 
 
-    <!-- SIDEBAR -->
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
     <nav class="sidebar">
 
         <ul>
+
+
+            <!-- DATA LOADING -->
 
             <li>
 
@@ -51,6 +64,8 @@
             </li>
 
 
+            <!-- EDA -->
+
             <li>
 
                 <a
@@ -67,6 +82,8 @@
 
             </li>
 
+
+            <!-- PREPROCESSING -->
 
             <li>
 
@@ -85,35 +102,64 @@
             </li>
 
 
-            <li class="menu-item disabled">
+            <!-- MODEL -->
 
-                Model Training (coming soon)
+            <li>
+
+                <span class="menu-item disabled">
+
+                    Model Training (coming soon)
+
+                </span>
 
             </li>
 
 
-            <li class="menu-item disabled">
+            <!-- PREDICTION -->
 
-                Prediction (coming soon)
+            <li>
+
+                <span class="menu-item disabled">
+
+                    Prediction (coming soon)
+
+                </span>
 
             </li>
+
 
         </ul>
 
     </nav>
 
 
-    <!-- MAIN CONTENT -->
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
 
     <main class="content">
 
 
-        <h2>Data Preprocessing</h2>
+        <h2>
+            Dataset Loading
+        </h2>
 
+
+
+        <!-- =================================================
+             ERROR
+             ================================================= -->
 
         {% if error %}
 
             <div class="error">
+
+                <strong>
+                    Error loading dataset
+                </strong>
+
+                <br><br>
 
                 {{ error }}
 
@@ -122,12 +168,19 @@
         {% endif %}
 
 
-        {% if results %}
+
+        <!-- =================================================
+             DATA LOADED SUCCESSFULLY
+             ================================================= -->
+
+        {% if summary %}
 
 
-            <!-- SUMMARY -->
+            <!-- DATASET SUMMARY -->
 
-            <h3>Preprocessing Summary</h3>
+            <h3>
+                Dataset Summary
+            </h3>
 
 
             <table class="summary-table">
@@ -135,10 +188,18 @@
 
                 <tr>
 
-                    <td>Target Variable</td>
+                    <td>
+                        Total Rows
+                    </td>
 
                     <td>
-                        {{ results.target_name }}
+
+                        {{
+                            "{:,}".format(
+                                summary.n_rows
+                            )
+                        }}
+
                     </td>
 
                 </tr>
@@ -146,54 +207,12 @@
 
                 <tr>
 
-                    <td>Original Rows</td>
-
                     <td>
-                        {{ results.original_rows }}
+                        Total Columns
                     </td>
 
-                </tr>
-
-
-                <tr>
-
-                    <td>Training Samples</td>
-
                     <td>
-                        {{ results.training_samples }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>Testing Samples</td>
-
-                    <td>
-                        {{ results.testing_samples }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>Original Features</td>
-
-                    <td>
-                        {{ results.original_features }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>Processed Features</td>
-
-                    <td>
-                        {{ results.processed_features }}
+                        {{ summary.n_cols }}
                     </td>
 
                 </tr>
@@ -202,129 +221,290 @@
             </table>
 
 
-            <!-- BEFORE -->
 
-            <h3>Before Preprocessing</h3>
+            <!-- =================================================
+                 FILE INFORMATION
+                 ================================================= -->
 
-
-            <table class="summary-table">
-
-
-                <tr>
-
-                    <td>Training Data</td>
-
-                    <td>
-                        {{ results.train_shape[0] }}
-                        ×
-                        {{ results.original_features }}
-                    </td>
-
-                </tr>
+            <h3>
+                Dataset Files
+            </h3>
 
 
-                <tr>
-
-                    <td>Testing Data</td>
-
-                    <td>
-                        {{ results.test_shape[0] }}
-                        ×
-                        {{ results.original_features }}
-                    </td>
-
-                </tr>
+            <div class="table-wrapper">
 
 
-            </table>
+                <table class="data-table">
 
 
-            <!-- AFTER -->
+                    <thead>
 
-            <h3>After Preprocessing</h3>
+                        <tr>
 
+                            <th>
+                                File Name
+                            </th>
 
-            <table class="summary-table">
+                            <th>
+                                Rows
+                            </th>
 
+                        </tr>
 
-                <tr>
-
-                    <td>Training Data</td>
-
-                    <td>
-                        {{ results.train_shape[0] }}
-                        ×
-                        {{ results.processed_features }}
-                    </td>
-
-                </tr>
+                    </thead>
 
 
-                <tr>
-
-                    <td>Testing Data</td>
-
-                    <td>
-                        {{ results.test_shape[0] }}
-                        ×
-                        {{ results.processed_features }}
-                    </td>
-
-                </tr>
+                    <tbody>
 
 
-            </table>
+                    {% for filename, rows in summary.file_rows.items() %}
 
 
-            <!-- OPERATIONS -->
+                        <tr>
 
-            <h3>Preprocessing Operations</h3>
+                            <td>
+                                {{ filename }}
+                            </td>
+
+                            <td>
+
+                                {{
+                                    "{:,}".format(
+                                        rows
+                                    )
+                                }}
+
+                            </td>
+
+                        </tr>
 
 
-            <div class="info-box">
+                    {% endfor %}
 
-                <ul>
 
-                    <li>
-                        Duplicate rows removed
-                    </li>
+                    </tbody>
 
-                    <li>
-                        Invalid target values removed
-                    </li>
 
-                    <li>
-                        Numerical missing values handled using median
-                    </li>
+                </table>
 
-                    <li>
-                        Categorical missing values handled using most frequent value
-                    </li>
-
-                    <li>
-                        Numerical features standardized using StandardScaler
-                    </li>
-
-                    <li>
-                        Categorical features encoded using OneHotEncoder
-                    </li>
-
-                    <li>
-                        Dataset divided into 80% training and 20% testing
-                    </li>
-
-                    <li>
-                        Target variable: <strong>price</strong>
-                    </li>
-
-                </ul>
 
             </div>
 
 
+
+            <!-- =================================================
+                 COLUMN INFORMATION
+                 ================================================= -->
+
+            <h3>
+                Dataset Columns
+            </h3>
+
+
+            <div class="table-wrapper">
+
+
+                <table class="data-table">
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                #
+                            </th>
+
+                            <th>
+                                Column
+                            </th>
+
+                            <th>
+                                Data Type
+                            </th>
+
+                            <th>
+                                Missing Values
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for column in summary.columns %}
+
+
+                        <tr>
+
+                            <td>
+                                {{ loop.index }}
+                            </td>
+
+
+                            <td>
+                                {{ column }}
+                            </td>
+
+
+                            <td>
+                                {{ summary.dtypes[column] }}
+                            </td>
+
+
+                            <td>
+
+                                {{
+                                    "{:,}".format(
+                                        summary.missing_counts[column]
+                                    )
+                                }}
+
+                            </td>
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+
+
+            <!-- =================================================
+                 DATA PREVIEW
+                 ================================================= -->
+
+            <h3>
+                Dataset Preview
+            </h3>
+
+
+            <div class="table-wrapper">
+
+
+                <table class="data-table preview-table">
+
+
+                    <thead>
+
+                        <tr>
+
+
+                        {% for column in summary.columns %}
+
+
+                            <th>
+
+                                {{ column }}
+
+                            </th>
+
+
+                        {% endfor %}
+
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for row in summary.preview %}
+
+
+                        <tr>
+
+
+                        {% for column in summary.columns %}
+
+
+                            <td>
+
+                                {{ row[column] }}
+
+                            </td>
+
+
+                        {% endfor %}
+
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+
+
+            <!-- =================================================
+                 SUCCESS MESSAGE
+                 ================================================= -->
+
             <div class="success">
 
-                ✓ Preprocessing completed successfully.
+                ✓ Dataset loaded successfully.
+
+                <br>
+
+                ✓ 10K and 100K Excel datasets were loaded.
+
+                <br>
+
+                ✓ Both datasets were combined into one DataFrame.
+
+            </div>
+
+
+        {% endif %}
+
+
+        <!-- =================================================
+             INITIAL PAGE
+             ================================================= -->
+
+        {% if not summary and not error %}
+
+
+            <div class="info-box">
+
+                <h3>
+                    Apartment Rental Dataset
+                </h3>
+
+
+                <p>
+
+                    Click
+
+                    <strong>
+                        Data Loading
+                    </strong>
+
+                    in the sidebar to load and inspect
+                    the apartment rental datasets.
+
+                </p>
 
             </div>
 
