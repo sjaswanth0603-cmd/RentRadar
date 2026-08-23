@@ -17,7 +17,9 @@ def index():
 
     return render_template(
         "index.html",
-        active="none"
+        active="none",
+        summary=None,
+        error=None
     )
 
 
@@ -32,26 +34,18 @@ def data_loading():
     summary = None
 
     try:
-
         summary = get_data_summary()
 
     except FileNotFoundError as e:
-
         error = str(e)
 
     except Exception as e:
-
         error = f"Unexpected error: {e}"
 
-
     return render_template(
-
         "index.html",
-
         active="data-loading",
-
         summary=summary,
-
         error=error
     )
 
@@ -67,26 +61,18 @@ def eda():
     eda_output = None
 
     try:
-
         eda_output = run_eda()
 
     except FileNotFoundError as e:
-
         error = str(e)
 
     except Exception as e:
-
         error = f"Unexpected error: {e}"
 
-
     return render_template(
-
         "eda.html",
-
         active="eda",
-
         results=eda_output,
-
         error=error
     )
 
@@ -111,16 +97,19 @@ def preprocessing():
             preprocessor
         ) = preprocess_data()
 
-
         preprocessing_output = {
 
-            "original_rows": len(y_train) + len(y_test),
+            "original_rows":
+                len(y_train) + len(y_test),
 
-            "training_samples": len(y_train),
+            "training_samples":
+                len(y_train),
 
-            "testing_samples": len(y_test),
+            "testing_samples":
+                len(y_test),
 
-            "original_features": 13,
+            "original_features":
+                13,
 
             "processed_features":
                 X_train_processed.shape[1],
@@ -133,26 +122,18 @@ def preprocessing():
 
             "target_name":
                 "price"
-
         }
 
     except FileNotFoundError as e:
-
         error = str(e)
 
     except Exception as e:
-
         error = f"Unexpected error: {e}"
 
-
     return render_template(
-
         "preprocessing.html",
-
         active="preprocessing",
-
         results=preprocessing_output,
-
         error=error
     )
 
@@ -163,4 +144,6 @@ def preprocessing():
 
 if __name__ == "__main__":
 
-    app.run(debug=True)
+    app.run(
+        debug=True
+    )
