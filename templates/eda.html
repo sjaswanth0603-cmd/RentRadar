@@ -45,95 +45,53 @@
 
     <nav class="sidebar">
 
-        <ul>
+    <ul>
 
+        <li>
+            <a href="{{ url_for('index') }}"
+               class="menu-item">
+                Dashboard
+            </a>
+        </li>
 
-            <!-- DATA LOADING -->
+        <li>
+            <a href="{{ url_for('data_loading') }}"
+               class="menu-item {% if active == 'data-loading' %}active{% endif %}">
+                Data Loading
+            </a>
+        </li>
 
-            <li>
+        <li>
+            <a href="{{ url_for('eda') }}"
+               class="menu-item {% if active == 'eda' %}active{% endif %}">
+                EDA
+            </a>
+        </li>
 
-                <a
-                    href="{{ url_for('data_loading') }}"
-                    class="menu-item
-                    {% if active == 'data-loading' %}
-                    active
-                    {% endif %}"
-                >
+        <li>
+            <a href="{{ url_for('preprocessing') }}"
+               class="menu-item {% if active == 'preprocessing' %}active{% endif %}">
+                Preprocessing
+            </a>
+        </li>
 
-                    Data Loading
+        <li>
+            <a href="{{ url_for('linear_regression') }}"
+               class="menu-item {% if active == 'linear-regression' %}active{% endif %}">
+                Linear Regression
+            </a>
+        </li>
 
-                </a>
+        <li>
+            <a href="{{ url_for('logistic_regression') }}"
+               class="menu-item {% if active == 'logistic-regression' %}active{% endif %}">
+                Logistic Regression
+            </a>
+        </li>
 
-            </li>
+    </ul>
 
-
-            <!-- EDA -->
-
-            <li>
-
-                <a
-                    href="{{ url_for('eda') }}"
-                    class="menu-item
-                    {% if active == 'eda' %}
-                    active
-                    {% endif %}"
-                >
-
-                    EDA
-
-                </a>
-
-            </li>
-
-
-            <!-- PREPROCESSING -->
-
-            <li>
-
-                <a
-                    href="{{ url_for('preprocessing') }}"
-                    class="menu-item
-                    {% if active == 'preprocessing' %}
-                    active
-                    {% endif %}"
-                >
-
-                    Preprocessing
-
-                </a>
-
-            </li>
-
-
-            <!-- MODEL TRAINING -->
-
-            <li>
-
-                <span class="menu-item disabled">
-
-                    Model Training (coming soon)
-
-                </span>
-
-            </li>
-
-
-            <!-- PREDICTION -->
-
-            <li>
-
-                <span class="menu-item disabled">
-
-                    Prediction (coming soon)
-
-                </span>
-
-            </li>
-
-
-        </ul>
-
-    </nav>
+</nav>
 
 
 

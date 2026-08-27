@@ -2,12 +2,14 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <title>RentRadar - Preprocessing</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 
 <body>
@@ -16,13 +18,29 @@
     <h1>RentRadar</h1>
 </header>
 
+
 <div class="layout">
 
-    <!-- SIDEBAR -->
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
     <nav class="sidebar">
 
         <ul>
+
+            <!-- DASHBOARD -->
+
+            <li>
+                <a href="{{ url_for('index') }}"
+                   class="menu-item {% if active == 'none' %}active{% endif %}">
+                    Dashboard
+                </a>
+            </li>
+
+
+            <!-- DATA LOADING -->
 
             <li>
                 <a href="{{ url_for('data_loading') }}"
@@ -31,12 +49,18 @@
                 </a>
             </li>
 
+
+            <!-- EDA -->
+
             <li>
                 <a href="{{ url_for('eda') }}"
                    class="menu-item {% if active == 'eda' %}active{% endif %}">
                     EDA
                 </a>
             </li>
+
+
+            <!-- PREPROCESSING -->
 
             <li>
                 <a href="{{ url_for('preprocessing') }}"
@@ -45,16 +69,24 @@
                 </a>
             </li>
 
-            <li>
-                <span class="menu-item disabled">
-                    Model Training (coming soon)
-                </span>
-            </li>
+
+            <!-- LINEAR REGRESSION -->
 
             <li>
-                <span class="menu-item disabled">
-                    Prediction (coming soon)
-                </span>
+                <a href="{{ url_for('linear_regression') }}"
+                   class="menu-item {% if active == 'linear-regression' %}active{% endif %}">
+                    Linear Regression
+                </a>
+            </li>
+
+
+            <!-- LOGISTIC REGRESSION -->
+
+            <li>
+                <a href="{{ url_for('logistic_regression') }}"
+                   class="menu-item {% if active == 'logistic-regression' %}active{% endif %}">
+                    Logistic Regression
+                </a>
             </li>
 
         </ul>
@@ -62,7 +94,9 @@
     </nav>
 
 
-    <!-- MAIN CONTENT -->
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
 
     <main class="content">
 
@@ -80,7 +114,10 @@
 
         {% if results %}
 
-            <!-- SUMMARY -->
+
+            <!-- =================================================
+                 SUMMARY
+                 ================================================= -->
 
             <h3>Preprocessing Summary</h3>
 
@@ -88,96 +125,159 @@
 
                 <tr>
                     <td>Target Variable</td>
-                    <td>{{ results.target_name }}</td>
+
+                    <td>
+                        {{ results.target_name }}
+                    </td>
                 </tr>
+
 
                 <tr>
                     <td>Original Rows</td>
-                    <td>{{ results.original_rows }}</td>
+
+                    <td>
+                        {{ results.original_rows }}
+                    </td>
                 </tr>
+
 
                 <tr>
                     <td>Training Samples</td>
-                    <td>{{ results.training_samples }}</td>
+
+                    <td>
+                        {{ results.training_samples }}
+                    </td>
                 </tr>
+
 
                 <tr>
                     <td>Testing Samples</td>
-                    <td>{{ results.testing_samples }}</td>
+
+                    <td>
+                        {{ results.testing_samples }}
+                    </td>
                 </tr>
+
 
                 <tr>
                     <td>Original Features</td>
-                    <td>{{ results.original_features }}</td>
+
+                    <td>
+                        {{ results.original_features }}
+                    </td>
                 </tr>
+
 
                 <tr>
                     <td>Processed Features</td>
-                    <td>{{ results.processed_features }}</td>
+
+                    <td>
+                        {{ results.processed_features }}
+                    </td>
                 </tr>
 
             </table>
 
 
-            <!-- BEFORE -->
+            <!-- =================================================
+                 BEFORE PREPROCESSING
+                 ================================================= -->
 
             <h3>Before Preprocessing</h3>
 
             <table class="summary-table">
 
                 <tr>
-                    <td>Training Data</td>
 
                     <td>
-                        {{ results.train_shape[0] }}
-                        ×
-                        {{ results.original_features }}
+                        Training Data
                     </td>
+
+                    <td>
+
+                        {{ results.train_shape[0] }}
+
+                        ×
+
+                        {{ results.original_features }}
+
+                    </td>
+
                 </tr>
 
+
                 <tr>
-                    <td>Testing Data</td>
 
                     <td>
-                        {{ results.test_shape[0] }}
-                        ×
-                        {{ results.original_features }}
+                        Testing Data
                     </td>
+
+                    <td>
+
+                        {{ results.test_shape[0] }}
+
+                        ×
+
+                        {{ results.original_features }}
+
+                    </td>
+
                 </tr>
 
             </table>
 
 
-            <!-- AFTER -->
+            <!-- =================================================
+                 AFTER PREPROCESSING
+                 ================================================= -->
 
             <h3>After Preprocessing</h3>
 
             <table class="summary-table">
 
                 <tr>
-                    <td>Training Data</td>
 
                     <td>
-                        {{ results.train_shape[0] }}
-                        ×
-                        {{ results.processed_features }}
+                        Training Data
                     </td>
+
+                    <td>
+
+                        {{ results.train_shape[0] }}
+
+                        ×
+
+                        {{ results.processed_features }}
+
+                    </td>
+
                 </tr>
 
+
                 <tr>
-                    <td>Testing Data</td>
 
                     <td>
-                        {{ results.test_shape[0] }}
-                        ×
-                        {{ results.processed_features }}
+                        Testing Data
                     </td>
+
+                    <td>
+
+                        {{ results.test_shape[0] }}
+
+                        ×
+
+                        {{ results.processed_features }}
+
+                    </td>
+
                 </tr>
 
             </table>
 
 
-            <!-- OPERATIONS -->
+            <!-- =================================================
+                 OPERATIONS
+                 ================================================= -->
 
             <h3>Preprocessing Operations</h3>
 
@@ -194,7 +294,8 @@
                     </li>
 
                     <li>
-                        Numerical missing values handled using median
+                        Numerical missing values handled using
+                        median
                     </li>
 
                     <li>
@@ -203,15 +304,18 @@
                     </li>
 
                     <li>
-                        Numerical features standardized using StandardScaler
+                        Numerical features standardized using
+                        StandardScaler
                     </li>
 
                     <li>
-                        Categorical features encoded using OneHotEncoder
+                        Categorical features encoded using
+                        OneHotEncoder
                     </li>
 
                     <li>
-                        Dataset divided into 80% training and 20% testing
+                        Dataset divided into
+                        80% training and 20% testing
                     </li>
 
                     <li>
@@ -224,15 +328,40 @@
             </div>
 
 
+            <!-- =================================================
+                 SUCCESS
+                 ================================================= -->
+
             <div class="success">
+
                 ✓ Preprocessing completed successfully.
+
             </div>
 
+
+            <!-- =================================================
+                 NEXT STEP
+                 ================================================= -->
+
+            <div class="eda-next">
+
+                <a href="{{ url_for('linear_regression') }}"
+                   class="next-button">
+
+                    Continue to Linear Regression →
+
+                </a>
+
+            </div>
+
+
         {% endif %}
+
 
     </main>
 
 </div>
 
 </body>
+
 </html>

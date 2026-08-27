@@ -44,6 +44,19 @@
 
         <ul>
 
+            <!-- DASHBOARD -->
+
+            <li>
+
+                <a
+                    href="{{ url_for('index') }}"
+                    class="menu-item"
+                >
+                    Dashboard
+                </a>
+
+            </li>
+
 
             <!-- DATA LOADING -->
 
@@ -51,14 +64,9 @@
 
                 <a
                     href="{{ url_for('data_loading') }}"
-                    class="menu-item
-                    {% if active == 'data-loading' %}
-                    active
-                    {% endif %}"
+                    class="menu-item {% if active == 'data-loading' %}active{% endif %}"
                 >
-
                     Data Loading
-
                 </a>
 
             </li>
@@ -70,14 +78,9 @@
 
                 <a
                     href="{{ url_for('eda') }}"
-                    class="menu-item
-                    {% if active == 'eda' %}
-                    active
-                    {% endif %}"
+                    class="menu-item {% if active == 'eda' %}active{% endif %}"
                 >
-
                     EDA
-
                 </a>
 
             </li>
@@ -89,44 +92,40 @@
 
                 <a
                     href="{{ url_for('preprocessing') }}"
-                    class="menu-item
-                    {% if active == 'preprocessing' %}
-                    active
-                    {% endif %}"
+                    class="menu-item {% if active == 'preprocessing' %}active{% endif %}"
                 >
-
                     Preprocessing
-
                 </a>
 
             </li>
 
 
-            <!-- MODEL -->
+            <!-- LINEAR REGRESSION -->
 
             <li>
 
-                <span class="menu-item disabled">
-
-                    Model Training (coming soon)
-
-                </span>
+                <a
+                    href="{{ url_for('linear_regression') }}"
+                    class="menu-item {% if active == 'linear-regression' %}active{% endif %}"
+                >
+                    Linear Regression
+                </a>
 
             </li>
 
 
-            <!-- PREDICTION -->
+            <!-- LOGISTIC REGRESSION -->
 
             <li>
 
-                <span class="menu-item disabled">
-
-                    Prediction (coming soon)
-
-                </span>
+                <a
+                    href="{{ url_for('logistic_regression') }}"
+                    class="menu-item {% if active == 'logistic-regression' %}active{% endif %}"
+                >
+                    Logistic Regression
+                </a>
 
             </li>
-
 
         </ul>
 
@@ -176,307 +175,486 @@
         {% if summary %}
 
 
-            <!-- DATASET SUMMARY -->
+            <!-- =================================================
+                 DATASET SUMMARY
+                 ================================================= -->
 
-            <h3>
-                Dataset Summary
-            </h3>
+            <section class="data-card">
 
-
-            <table class="summary-table">
-
-
-                <tr>
-
-                    <td>
-                        Total Rows
-                    </td>
-
-                    <td>
-
-                        {{
-                            "{:,}".format(
-                                summary.n_rows
-                            )
-                        }}
-
-                    </td>
-
-                </tr>
+                <h3>
+                    Dataset Summary
+                </h3>
 
 
-                <tr>
-
-                    <td>
-                        Total Columns
-                    </td>
-
-                    <td>
-                        {{ summary.n_cols }}
-                    </td>
-
-                </tr>
+                <div class="dataset-summary">
 
 
-            </table>
+                    <!-- TOTAL ROWS -->
+
+                    <div class="summary-item">
+
+                        <span class="summary-label">
+                            Total Rows
+                        </span>
+
+                        <span class="summary-value">
+
+                            {{
+                                "{:,}".format(
+                                    summary.total_rows
+                                )
+                            }}
+
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- TOTAL COLUMNS -->
+
+                    <div class="summary-item">
+
+                        <span class="summary-label">
+                            Total Columns
+                        </span>
+
+                        <span class="summary-value">
+
+                            {{ summary.total_columns }}
+
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- TOTAL CELLS -->
+
+                    <div class="summary-item">
+
+                        <span class="summary-label">
+                            Total Cells
+                        </span>
+
+                        <span class="summary-value">
+
+                            {{
+                                "{:,}".format(
+                                    summary.total_cells
+                                )
+                            }}
+
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- DUPLICATE ROWS -->
+
+                    <div class="summary-item">
+
+                        <span class="summary-label">
+                            Duplicate Rows
+                        </span>
+
+                        <span class="summary-value">
+
+                            {{
+                                "{:,}".format(
+                                    summary.duplicate_rows
+                                )
+                            }}
+
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- MEMORY -->
+
+                    <div class="summary-item">
+
+                        <span class="summary-label">
+                            Memory Usage
+                        </span>
+
+                        <span class="summary-value">
+
+                            {{ summary.memory_usage }}
+
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+            </section>
 
 
 
             <!-- =================================================
-                 FILE INFORMATION
+                 DATASET RECORDS
                  ================================================= -->
 
-            <h3>
-                Dataset Files
-            </h3>
+            <section class="data-card">
 
 
-            <div class="table-wrapper">
+                <h3>
+                    Dataset Records
+                </h3>
 
 
-                <table class="data-table">
+                <!-- RECORD COUNT -->
 
+                <div class="table-info">
 
-                    <thead>
+                    Showing
 
-                        <tr>
+                    {{
+                        ((summary.page - 1)
+                        * summary.page_size) + 1
+                    }}
 
-                            <th>
-                                File Name
-                            </th>
+                    -
 
-                            <th>
-                                Rows
-                            </th>
+                    {{
+                        ((summary.page - 1)
+                        * summary.page_size)
+                        + summary.records|length
+                    }}
 
-                        </tr>
+                    of
 
-                    </thead>
+                    {{
+                        "{:,}".format(
+                            summary.total_rows
+                        )
+                    }}
 
+                    rows
 
-                    <tbody>
-
-
-                    {% for filename, rows in summary.file_rows.items() %}
-
-
-                        <tr>
-
-                            <td>
-                                {{ filename }}
-                            </td>
-
-                            <td>
-
-                                {{
-                                    "{:,}".format(
-                                        rows
-                                    )
-                                }}
-
-                            </td>
-
-                        </tr>
-
-
-                    {% endfor %}
-
-
-                    </tbody>
-
-
-                </table>
-
-
-            </div>
+                </div>
 
 
 
-            <!-- =================================================
-                 COLUMN INFORMATION
-                 ================================================= -->
+                <!-- =================================================
+                     TABLE
+                     ================================================= -->
 
-            <h3>
-                Dataset Columns
-            </h3>
+                <div class="records-table-container">
 
 
-            <div class="table-wrapper">
+                    <table class="records-table">
 
 
-                <table class="data-table">
+                        <!-- TABLE HEADER -->
 
-
-                    <thead>
+                        <thead>
 
                         <tr>
+
+
+                            <!-- NUMBER -->
 
                             <th>
                                 #
                             </th>
 
-                            <th>
-                                Column
-                            </th>
 
-                            <th>
-                                Data Type
-                            </th>
+                            <!-- DATASET COLUMNS -->
 
-                            <th>
-                                Missing Values
-                            </th>
+                            {% for column in summary.columns %}
+
+                                <th>
+
+                                    {{ column }}
+
+                                </th>
+
+                            {% endfor %}
+
 
                         </tr>
 
-                    </thead>
-
-
-                    <tbody>
-
-
-                    {% for column in summary.columns %}
-
-
-                        <tr>
-
-                            <td>
-                                {{ loop.index }}
-                            </td>
-
-
-                            <td>
-                                {{ column }}
-                            </td>
-
-
-                            <td>
-                                {{ summary.dtypes[column] }}
-                            </td>
-
-
-                            <td>
-
-                                {{
-                                    "{:,}".format(
-                                        summary.missing_counts[column]
-                                    )
-                                }}
-
-                            </td>
-
-                        </tr>
-
-
-                    {% endfor %}
-
-
-                    </tbody>
-
-
-                </table>
-
-
-            </div>
+                        </thead>
 
 
 
-            <!-- =================================================
-                 DATA PREVIEW
-                 ================================================= -->
+                        <!-- =================================================
+                             TABLE BODY
+                             ================================================= -->
 
-            <h3>
-                Dataset Preview
-            </h3>
+                        <tbody>
 
 
-            <div class="table-wrapper">
+                        {% for record in summary.records %}
 
 
-                <table class="data-table preview-table">
+                            <tr>
 
 
-                    <thead>
+                                <!-- ROW NUMBER -->
 
-                        <tr>
+                                <td>
+
+                                    {{
+                                        ((summary.page - 1)
+                                        * summary.page_size)
+                                        + loop.index
+                                    }}
+
+                                </td>
 
 
-                        {% for column in summary.columns %}
+
+                                <!-- DATA -->
+
+                                {% for column in summary.columns %}
 
 
-                            <th>
+                                    <td>
 
-                                {{ column }}
+                                        {% if record[column] == "" %}
 
-                            </th>
+                                            —
+
+                                        {% else %}
+
+                                            {{ record[column] }}
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                {% endfor %}
+
+
+                            </tr>
 
 
                         {% endfor %}
 
 
-                        </tr>
-
-                    </thead>
+                        </tbody>
 
 
-                    <tbody>
+                    </table>
 
 
-                    {% for row in summary.preview %}
-
-
-                        <tr>
-
-
-                        {% for column in summary.columns %}
-
-
-                            <td>
-
-                                {{ row[column] }}
-
-                            </td>
-
-
-                        {% endfor %}
-
-
-                        </tr>
-
-
-                    {% endfor %}
-
-
-                    </tbody>
-
-
-                </table>
-
-
-            </div>
+                </div>
 
 
 
-            <!-- =================================================
-                 SUCCESS MESSAGE
-                 ================================================= -->
+                <!-- =================================================
+                     PAGINATION
+                     ================================================= -->
 
-            <div class="success">
+                <div class="pagination-container">
 
-                ✓ Dataset loaded successfully.
 
-                <br>
+                    <!-- PAGINATION BUTTONS -->
 
-                ✓ 10K and 100K Excel datasets were loaded.
+                    <div class="pagination-buttons">
 
-                <br>
 
-                ✓ Both datasets were combined into one DataFrame.
+                        <!-- FIRST -->
 
-            </div>
+                        {% if summary.has_previous %}
+
+                            <a
+                                href="{{ url_for(
+                                    'data_loading',
+                                    page=1,
+                                    page_size=summary.page_size
+                                ) }}"
+                                class="page-button"
+                            >
+                                First
+                            </a>
+
+                        {% else %}
+
+                            <span class="page-button disabled">
+                                First
+                            </span>
+
+                        {% endif %}
+
+
+
+                        <!-- PREVIOUS -->
+
+                        {% if summary.has_previous %}
+
+                            <a
+                                href="{{ url_for(
+                                    'data_loading',
+                                    page=summary.page - 1,
+                                    page_size=summary.page_size
+                                ) }}"
+                                class="page-button"
+                            >
+                                Previous
+                            </a>
+
+                        {% else %}
+
+                            <span class="page-button disabled">
+                                Previous
+                            </span>
+
+                        {% endif %}
+
+
+
+                        <!-- PAGE NUMBER -->
+
+                        <span class="page-number">
+
+                            Page
+
+                            {{ summary.page }}
+
+                            of
+
+                            {{ summary.total_pages }}
+
+                        </span>
+
+
+
+                        <!-- NEXT -->
+
+                        {% if summary.has_next %}
+
+                            <a
+                                href="{{ url_for(
+                                    'data_loading',
+                                    page=summary.page + 1,
+                                    page_size=summary.page_size
+                                ) }}"
+                                class="page-button"
+                            >
+                                Next
+                            </a>
+
+                        {% else %}
+
+                            <span class="page-button disabled">
+                                Next
+                            </span>
+
+                        {% endif %}
+
+
+
+                        <!-- LAST -->
+
+                        {% if summary.has_next %}
+
+                            <a
+                                href="{{ url_for(
+                                    'data_loading',
+                                    page=summary.total_pages,
+                                    page_size=summary.page_size
+                                ) }}"
+                                class="page-button"
+                            >
+                                Last
+                            </a>
+
+                        {% else %}
+
+                            <span class="page-button disabled">
+                                Last
+                            </span>
+
+                        {% endif %}
+
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                         ROWS PER PAGE
+                         ================================================= -->
+
+                    <div class="rows-per-page">
+
+
+                        <label for="page-size">
+
+                            Rows per page:
+
+                        </label>
+
+
+                        <select
+                            id="page-size"
+                            onchange="changePageSize(this.value)"
+                        >
+
+
+                            <option
+                                value="10"
+                                {% if summary.page_size == 10 %}
+                                    selected
+                                {% endif %}
+                            >
+                                10
+                            </option>
+
+
+                            <option
+                                value="20"
+                                {% if summary.page_size == 20 %}
+                                    selected
+                                {% endif %}
+                            >
+                                20
+                            </option>
+
+
+                            <option
+                                value="50"
+                                {% if summary.page_size == 50 %}
+                                    selected
+                                {% endif %}
+                            >
+                                50
+                            </option>
+
+
+                            <option
+                                value="100"
+                                {% if summary.page_size == 100 %}
+                                    selected
+                                {% endif %}
+                            >
+                                100
+                            </option>
+
+
+                        </select>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </section>
 
 
         {% endif %}
+
 
 
         <!-- =================================================
@@ -486,7 +664,7 @@
         {% if not summary and not error %}
 
 
-            <div class="info-box">
+            <section class="data-card">
 
                 <h3>
                     Apartment Rental Dataset
@@ -502,11 +680,11 @@
                     </strong>
 
                     in the sidebar to load and inspect
-                    the apartment rental datasets.
+                    the apartment rental dataset.
 
                 </p>
 
-            </div>
+            </section>
 
 
         {% endif %}
@@ -516,6 +694,25 @@
 
 
 </div>
+
+
+
+<!-- =====================================================
+     PAGE SIZE JAVASCRIPT
+     ===================================================== -->
+
+<script>
+
+function changePageSize(size) {
+
+    window.location.href =
+        "{{ url_for('data_loading') }}"
+        + "?page=1&page_size="
+        + size;
+
+}
+
+</script>
 
 
 </body>
