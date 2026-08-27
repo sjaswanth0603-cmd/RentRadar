@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>RentRadar - Linear Regression</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     TOP BAR
+     ===================================================== -->
+
+<header class="topbar">
+
+    <h1>
+        RentRadar
+    </h1>
+
+</header>
+
+
+
+<div class="layout">
+
+
+    <!-- =================================================
+         SIDEBAR
+         ================================================= -->
+
+    <aside class="sidebar">
+
+        <ul>
+
+
+            <!-- DASHBOARD -->
+
+            <li>
+
+                <a
+                    href="{{ url_for('index') }}"
+                    class="menu-item"
+                >
+                    Dashboard
+                </a>
+
+            </li>
+
+
+
+            <!-- DATA LOADING -->
+
+            <li>
+
+                <a
+                    href="{{ url_for('data_loading') }}"
+                    class="menu-item {% if active == 'data-loading' %}active{% endif %}"
+                >
+                    Data Loading
+                </a>
+
+            </li>
+
+
+
+            <!-- EDA -->
+
+            <li>
+
+                <a
+                    href="{{ url_for('eda') }}"
+                    class="menu-item {% if active == 'eda' %}active{% endif %}"
+                >
+                    EDA
+                </a>
+
+            </li>
+
+
+
+            <!-- PREPROCESSING -->
+
+            <li>
+
+                <a
+                    href="{{ url_for('preprocessing') }}"
+                    class="menu-item {% if active == 'preprocessing' %}active{% endif %}"
+                >
+                    Preprocessing
+                </a>
+
+            </li>
+
+
+
+            <!-- LINEAR REGRESSION -->
+
+            <li>
+
+                <a
+                    href="{{ url_for('linear_regression') }}"
+                    class="menu-item {% if active == 'linear-regression' %}active{% endif %}"
+                >
+                    Linear Regression
+                </a>
+
+            </li>
+
+
+
+            <!-- LOGISTIC REGRESSION -->
+
+            <li>
+
+                <a
+                    href="{{ url_for('logistic_regression') }}"
+                    class="menu-item {% if active == 'logistic-regression' %}active{% endif %}"
+                >
+                    Logistic Regression
+                </a>
+
+            </li>
+
+
+        </ul>
+
+    </aside>
+
+
+
+    <!-- =================================================
+         MAIN CONTENT
+         ================================================= -->
+
+    <main class="content">
+
+
+        <h2>
+            Linear Regression
+        </h2>
+
+
+
+        <!-- =================================================
+             ERROR
+             ================================================= -->
+
+        {% if error %}
+
+        <div class="error">
+
+            <strong>
+                Error:
+            </strong>
+
+            {{ error }}
+
+        </div>
+
+        {% endif %}
+
+
+
+        <!-- =================================================
+             RESULTS
+             ================================================= -->
+
+        {% if results %}
+
+
+        <!-- =================================================
+             MODEL INFORMATION
+             ================================================= -->
+
+        <div class="info-box">
+
+            <h3>
+                Model Information
+            </h3>
+
+
+            <ul>
+
+
+                <li>
+
+                    <strong>
+                        Algorithm:
+                    </strong>
+
+                    {{ results.model_name }}
+
+                </li>
+
+
+                <li>
+
+                    <strong>
+                        Target Variable:
+                    </strong>
+
+                    {{ results.target }}
+
+                </li>
+
+
+                <li>
+
+                    <strong>
+                        Training Samples:
+                    </strong>
+
+                    {{ results.training_samples }}
+
+                </li>
+
+
+                <li>
+
+                    <strong>
+                        Testing Samples:
+                    </strong>
+
+                    {{ results.testing_samples }}
+
+                </li>
+
+
+                <li>
+
+                    <strong>
+                        Processed Features:
+                    </strong>
+
+                    {{ results.features }}
+
+                </li>
+
+
+            </ul>
+
+        </div>
+
+
+
+        <!-- =================================================
+             MODEL PERFORMANCE
+             ================================================= -->
+
+        <h3>
+            Model Performance
+        </h3>
+
+
+        <table class="summary-table">
+
+
+            <tr>
+
+                <td>
+                    R² Score
+                </td>
+
+                <td>
+
+                    {{ results.r2 }}
+
+                    ({{ results.r2_percentage }}%)
+
+                </td>
+
+            </tr>
+
+
+
+            <tr>
+
+                <td>
+                    Mean Absolute Error (MAE)
+                </td>
+
+                <td>
+                    {{ results.mae }}
+                </td>
+
+            </tr>
+
+
+
+            <tr>
+
+                <td>
+                    Mean Squared Error (MSE)
+                </td>
+
+                <td>
+                    {{ results.mse }}
+                </td>
+
+            </tr>
+
+
+
+            <tr>
+
+                <td>
+                    Root Mean Squared Error (RMSE)
+                </td>
+
+                <td>
+                    {{ results.rmse }}
+                </td>
+
+            </tr>
+
+
+        </table>
+
+
+
+        <!-- =================================================
+             SUCCESS
+             ================================================= -->
+
+        <div class="success">
+
+            ✓ Linear Regression model trained successfully.
+
+        </div>
+
+
+
+        <!-- =================================================
+             GRAPH
+             ================================================= -->
+
+        <h3>
+            Actual vs Predicted Rent
+        </h3>
+
+
+        <div class="chart-grid">
+
+
+            <div class="chart-card">
+
+
+                <h4>
+                    Actual vs Predicted Rent Price
+                </h4>
+
+
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename=results.chart
+                    ) }}"
+                    alt="Linear Regression Actual vs Predicted"
+                >
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             SAMPLE PREDICTIONS
+             ================================================= -->
+
+        <h3>
+            Sample Predictions
+        </h3>
+
+
+        <div class="table-wrapper">
+
+
+            <table class="data-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Sample
+                        </th>
+
+                        <th>
+                            Actual Price
+                        </th>
+
+                        <th>
+                            Predicted Price
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for sample in results.samples %}
+
+                    <tr>
+
+                        <td>
+                            {{ loop.index }}
+                        </td>
+
+                        <td>
+                            {{ sample.actual }}
+                        </td>
+
+                        <td>
+                            {{ sample.predicted }}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+
+        {% else %}
+
+
+            {% if not error %}
+
+
+            <div class="info-box">
+
+                <h3>
+                    Linear Regression
+                </h3>
+
+                <p>
+
+                    The Linear Regression model has not
+                    been executed yet.
+
+                </p>
+
+            </div>
+
+
+            {% endif %}
+
+
+        {% endif %}
+
+
+
+        <!-- =================================================
+             NEXT STEP
+             ================================================= -->
+
+        <div class="eda-next">
+
+
+            <a
+                href="{{ url_for('logistic_regression') }}"
+                class="next-button"
+            >
+                Logistic Regression →
+            </a>
+
+
+        </div>
+
+
+    </main>
+
+
+</div>
+
+
+</body>
+
+</html>

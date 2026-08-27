@@ -362,10 +362,8 @@ def preprocess_data():
                 "encoder",
 
                 OneHotEncoder(
-
                     handle_unknown="ignore",
-
-                    sparse_output=False
+                    sparse_output=True
                 )
             )
 

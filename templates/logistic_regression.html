@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>RentRadar - Logistic Regression</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <h1>RentRadar</h1>
+
+</header>
+
+
+<div class="layout">
+
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+
+    <nav class="sidebar">
+
+        <ul>
+
+            <li>
+                <a href="{{ url_for('index') }}"
+                   class="menu-item">
+                    Dashboard
+                </a>
+            </li>
+
+
+            <li>
+                <a href="{{ url_for('data_loading') }}"
+                   class="menu-item">
+                    Data Loading
+                </a>
+            </li>
+
+
+            <li>
+                <a href="{{ url_for('eda') }}"
+                   class="menu-item">
+                    EDA
+                </a>
+            </li>
+
+
+            <li>
+                <a href="{{ url_for('preprocessing') }}"
+                   class="menu-item">
+                    Preprocessing
+                </a>
+            </li>
+
+
+            <li>
+                <a href="{{ url_for('linear_regression') }}"
+                   class="menu-item">
+                    Linear Regression
+                </a>
+            </li>
+
+
+            <li>
+                <a href="{{ url_for('logistic_regression') }}"
+                   class="menu-item active">
+                    Logistic Regression
+                </a>
+            </li>
+
+        </ul>
+
+    </nav>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
+    <main class="content">
+
+
+        <h2>
+            Logistic Regression
+        </h2>
+
+
+        {% if error %}
+
+        <div class="error">
+
+            <strong>
+                Logistic Regression Error
+            </strong>
+
+            <br><br>
+
+            {{ error }}
+
+        </div>
+
+        {% endif %}
+
+
+        {% if results %}
+
+
+        <!-- =================================================
+             MODEL SUMMARY
+             ================================================= -->
+
+        <h3>
+            Model Summary
+        </h3>
+
+
+        <table class="summary-table">
+
+            <tr>
+                <td>Model</td>
+                <td>{{ results.model_name }}</td>
+            </tr>
+
+
+            <tr>
+                <td>Target Variable</td>
+                <td>{{ results.target }}</td>
+            </tr>
+
+
+            <tr>
+                <td>Classification Rule</td>
+                <td>{{ results.classification_rule }}</td>
+            </tr>
+
+
+            <tr>
+                <td>Training Samples</td>
+                <td>{{ "{:,}".format(results.training_samples) }}</td>
+            </tr>
+
+
+            <tr>
+                <td>Testing Samples</td>
+                <td>{{ "{:,}".format(results.testing_samples) }}</td>
+            </tr>
+
+
+            <tr>
+                <td>Features</td>
+                <td>{{ results.features }}</td>
+            </tr>
+
+        </table>
+
+
+        <!-- =================================================
+             PERFORMANCE
+             ================================================= -->
+
+        <h3>
+            Model Performance
+        </h3>
+
+
+        <table class="summary-table">
+
+            <tr>
+                <td>Accuracy</td>
+                <td>
+                    <strong>
+                        {{ results.accuracy_percentage }}%
+                    </strong>
+                </td>
+            </tr>
+
+
+            <tr>
+                <td>Precision</td>
+                <td>
+                    {{ "%.2f"|format(results.precision * 100) }}%
+                </td>
+            </tr>
+
+
+            <tr>
+                <td>Recall</td>
+                <td>
+                    {{ "%.2f"|format(results.recall * 100) }}%
+                </td>
+            </tr>
+
+
+            <tr>
+                <td>F1 Score</td>
+                <td>
+                    {{ "%.2f"|format(results.f1 * 100) }}%
+                </td>
+            </tr>
+
+        </table>
+
+
+        <!-- =================================================
+             CONFUSION MATRIX
+             ================================================= -->
+
+        <h3>
+            Confusion Matrix
+        </h3>
+
+
+        <div class="chart-container">
+
+            <img
+                src="{{ url_for('static',
+                                filename=results.chart) }}"
+                alt="Logistic Regression Confusion Matrix"
+                class="chart-image"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             PREDICTION SAMPLES
+             ================================================= -->
+
+        <h3>
+            Prediction Samples
+        </h3>
+
+
+        <div class="table-wrapper">
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            #
+                        </th>
+
+                        <th>
+                            Actual
+                        </th>
+
+                        <th>
+                            Predicted
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for sample in results.samples %}
+
+                    <tr>
+
+                        <td>
+                            {{ loop.index }}
+                        </td>
+
+                        <td>
+                            {{ sample.actual }}
+                        </td>
+
+                        <td>
+                            {{ sample.predicted }}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- =================================================
+             SUCCESS
+             ================================================= -->
+
+        <div class="success">
+
+            ✓ Logistic Regression completed successfully.
+
+            <br>
+
+            ✓ Accuracy:
+            <strong>{{ results.accuracy_percentage }}%</strong>
+
+            <br>
+
+            ✓ The model classifies apartments as
+            <strong>Affordable</strong>
+            or
+            <strong>Expensive</strong>.
+
+        </div>
+
+
+        {% endif %}
+
+
+        {% if not results and not error %}
+
+        <div class="info-box">
+
+            <h3>
+                Logistic Regression
+            </h3>
+
+            <p>
+                Logistic Regression classifies apartment listings
+                into Affordable and Expensive categories based on
+                their rental price.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+
+    </main>
+
+
+</div>
+
+
+</body>
+
+</html>
