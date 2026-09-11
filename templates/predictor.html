@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}RentRadar - Interactive Rent Predictor{% endblock %}
+
+{% block content %}
+<h2>Interactive Rent Predictor</h2>
+<p class="page-subtitle" style="color: #666; margin-top: -20px; margin-bottom: 24px; font-size: 15px;">
+    Real-time machine learning rental valuation with full amenity toggles, market comparisons, and model architecture selection.
+</p>
+
+<!-- 1-Click Quick Presets -->
+<div class="data-card" style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #cbd5e1;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <span style="font-weight: bold; color: #1f3a5f; font-size: 15px;">
+            ⚡ Quick Property Presets:
+        </span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="preset-btn" onclick="applyPreset('studio')">🏙️ Urban Studio</button>
+            <button type="button" class="preset-btn" onclick="applyPreset('suburban')">🏡 Suburban Family Home</button>
+            <button type="button" class="preset-btn" onclick="applyPreset('luxury')">✨ Luxury Penthouse</button>
+            <button type="button" class="preset-btn" onclick="applyPreset('budget')">🏷️ Budget Commuter</button>
+        </div>
+    </div>
+</div>
+
+<!-- Main Prediction Form -->
+<form method="POST" action="{{ url_for('predictor') }}" id="predictorForm" class="data-card" style="margin-bottom: 30px;">
+    
+    <!-- Section 1: Property Basics -->
+    <h3 style="margin-top: 0; margin-bottom: 18px; color: #1f3a5f;">1. Core Structural Attributes</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px;">
+        
+        <div>
+            <label for="bedrooms" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">Bedrooms</label>
+            <input type="number" id="bedrooms" name="bedrooms" min="0" max="8" step="1" value="{{ input_data.bedrooms if input_data else 2 }}" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px;">
+        </div>
+
+        <div>
+            <label for="bathrooms" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">Bathrooms</label>
+            <input type="number" id="bathrooms" name="bathrooms" min="1" max="6" step="0.5" value="{{ input_data.bathrooms if input_data else 1.5 }}" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px;">
+        </div>
+
+        <div>
+            <label for="square_feet" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">Living Area (Square Feet)</label>
+            <input type="number" id="square_feet" name="square_feet" min="200" max="6000" step="25" value="{{ input_data.square_feet if input_data else 950 }}" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px;">
+        </div>
+
+        <div>
+            <label for="state" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">State (2-Letter Code)</label>
+            <input type="text" id="state" name="state" maxlength="2" value="{{ input_data.state if input_data else 'TX' }}" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; text-transform: uppercase;">
+        </div>
+
+        <div>
+            <label for="cityname" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">City / Metro</label>
+            <input type="text" id="cityname" name="cityname" value="{{ input_data.cityname if input_data else 'Austin' }}" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px;">
+        </div>
+
+        <div>
+            <label for="has_photo" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">Listing Photos</label>
+            <select id="has_photo" name="has_photo" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; background: white;">
+                <option value="Yes" {% if not input_data or input_data.has_photo == 'Yes' %}selected{% endif %}>Yes (Photos Verified)</option>
+                <option value="No" {% if input_data and input_data.has_photo == 'No' %}selected{% endif %}>No (No Photos)</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="pets_allowed" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">Pet Policy</label>
+            <select id="pets_allowed" name="pets_allowed" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; background: white;">
+                <option value="Cats,Dogs" {% if not input_data or input_data.pets_allowed == 'Cats,Dogs' %}selected{% endif %}>Cats &amp; Dogs Allowed</option>
+                <option value="Cats" {% if input_data and input_data.pets_allowed == 'Cats' %}selected{% endif %}>Cats Only</option>
+                <option value="Dogs" {% if input_data and input_data.pets_allowed == 'Dogs' %}selected{% endif %}>Dogs Only</option>
+                <option value="None" {% if input_data and input_data.pets_allowed == 'None' %}selected{% endif %}>No Pets Allowed</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="model_id" style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #334155;">Inference Model</label>
+            <select id="model_id" name="model_id" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; background: white; font-weight: 600; color: #1f3a5f;">
+                {% for m in models_list %}
+                <option value="{{ m.id }}" {% if selected_model == m.id %}selected{% endif %}>{{ m.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+    </div>
+
+    <!-- Section 2: 13 Interactive Amenity Checkboxes -->
+    <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="margin: 0; color: #1f3a5f;">2. Listing Amenities &amp; Finishings (13 Features)</h3>
+            <span style="font-size: 13px; color: #64748b;">Select features to reflect accurate amenity valuation</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 24px;">
+            
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_parking" id="chk_parking" value="1" {% if input_amenities and 'has_parking' in input_amenities %}checked{% endif %}>
+                <span>🚗 Parking / Garage</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_pool" id="chk_pool" value="1" {% if input_amenities and 'has_pool' in input_amenities %}checked{% endif %}>
+                <span>🏊 Swimming Pool</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_gym" id="chk_gym" value="1" {% if input_amenities and 'has_gym' in input_amenities %}checked{% endif %}>
+                <span>💪 Fitness Center / Gym</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_washer_dryer" id="chk_wd" value="1" {% if input_amenities and 'has_washer_dryer' in input_amenities %}checked{% endif %}>
+                <span>🧺 In-Unit Washer &amp; Dryer</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_ac" id="chk_ac" value="1" {% if input_amenities and 'has_ac' in input_amenities %}checked{% endif %}>
+                <span>❄️ Central Air Conditioning</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_dishwasher" id="chk_dishwasher" value="1" {% if input_amenities and 'has_dishwasher' in input_amenities %}checked{% endif %}>
+                <span>🍽️ Dishwasher</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_patio_deck" id="chk_patio" value="1" {% if input_amenities and 'has_patio_deck' in input_amenities %}checked{% endif %}>
+                <span>🌿 Balcony / Patio / Deck</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_storage" id="chk_storage" value="1" {% if input_amenities and 'has_storage' in input_amenities %}checked{% endif %}>
+                <span>📦 Storage Space</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_clubhouse" id="chk_clubhouse" value="1" {% if input_amenities and 'has_clubhouse' in input_amenities %}checked{% endif %}>
+                <span>🏛️ Resident Clubhouse</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_fireplace" id="chk_fireplace" value="1" {% if input_amenities and 'has_fireplace' in input_amenities %}checked{% endif %}>
+                <span>🔥 Fireplace</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_wood_floors" id="chk_wood" value="1" {% if input_amenities and 'has_wood_floors' in input_amenities %}checked{% endif %}>
+                <span>🪵 Hardwood / Wood Floors</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_gated" id="chk_gated" value="1" {% if input_amenities and 'has_gated' in input_amenities %}checked{% endif %}>
+                <span>🛡️ Gated Community / Security</span>
+            </label>
+
+            <label class="amenity-tile">
+                <input type="checkbox" name="has_elevator" id="chk_elevator" value="1" {% if input_amenities and 'has_elevator' in input_amenities %}checked{% endif %}>
+                <span>🛗 Elevator Access</span>
+            </label>
+
+            <label class="amenity-tile" style="background: #fdf4ff; border-color: #f0abfc;">
+                <input type="checkbox" name="feat_luxury" id="chk_luxury" value="1" {% if input_amenities and 'feat_luxury' in input_amenities %}checked{% endif %}>
+                <span style="font-weight: bold; color: #86198f;">✨ Luxury Modern Finishes</span>
+            </label>
+
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+        <button type="submit" class="next-button" style="border: none; cursor: pointer; padding: 14px 34px; font-size: 16px;">
+            Calculate Accurate Market Rental Value &rarr;
+        </button>
+    </div>
+
+</form>
+
+<!-- Prediction Output Results Area -->
+{% if result %}
+<div id="predictionResults" style="margin-top: 35px;">
+    
+    <!-- Hero Price Card -->
+    <div class="data-card" style="border: 2px solid #1f3a5f; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); padding: 30px; text-align: center; margin-bottom: 25px;">
+        <span style="text-transform: uppercase; letter-spacing: 1px; font-size: 13px; font-weight: bold; color: #64748b;">
+            Estimated Fair Market Rental Price
+        </span>
+        <div style="font-size: 48px; font-weight: 800; color: #1f3a5f; margin: 12px 0 8px 0;">
+            ${{ result.predicted_price }} <span style="font-size: 20px; font-weight: 500; color: #64748b;">/ month</span>
+        </div>
+        
+        <div style="display: flex; justify-content: center; gap: 15px; align-items: center; margin-top: 15px; flex-wrap: wrap;">
+            <span style="background: {{ result.tier_color }}; color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 14px;">
+                {{ result.price_tier }} Tier
+            </span>
+            <span style="font-size: 15px; color: #334155;">
+                State Median ({{ result.input_summary.state }}): <strong>${{ result.state_median }}/mo</strong> 
+                ({% if result.pct_diff >= 0 %}+{% endif %}{{ result.pct_diff }}%)
+            </span>
+            <span style="font-size: 13px; color: #64748b; background: #e2e8f0; padding: 4px 10px; border-radius: 4px;">
+                Evaluated via: <strong>{{ result.model_used|replace('_', ' ')|title }}</strong>
+            </span>
+        </div>
+    </div>
+
+    <!-- Humanized AI Insights -->
+    <div class="info-box" style="margin-bottom: 28px;">
+        <h4 style="text-align: left; margin-top: 0; color: #1f3a5f;">Rental Valuation Insights</h4>
+        <ul>
+            {% for ins in result.insights %}
+            <li>{{ ins }}</li>
+            {% endfor %}
+            <li><strong>Selected Amenities ({{ result.amenities_count }} active):</strong> 
+                {% if result.active_amenities %}
+                    {{ result.active_amenities|join(', ') }}
+                {% else %}
+                    None
+                {% endif %}
+            </li>
+        </ul>
+    </div>
+
+    <!-- Comparable Real Listings from Dataset -->
+    {% if result.comparables %}
+    <div class="data-card" style="margin-bottom: 28px;">
+        <h3>Nearby Comparable Real Listings</h3>
+        <p style="color: #64748b; font-size: 14px; margin-top: -10px; margin-bottom: 14px;">
+            Actual classified listings in {{ result.input_summary.state }} matching your property configuration:
+        </p>
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>City</th>
+                    <th>Bed / Bath</th>
+                    <th>Square Feet</th>
+                    <th>Actual Historical Rent</th>
+                    <th>Key Amenities</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comp in result.comparables %}
+                <tr>
+                    <td><strong>{{ comp.city }}</strong>, {{ comp.state }}</td>
+                    <td>{{ comp.bedrooms }} bed / {{ comp.bathrooms }} bath</td>
+                    <td>{{ comp.square_feet }} sq.ft.</td>
+                    <td><strong style="color: #1f3a5f;">{{ comp.price }}</strong></td>
+                    <td style="font-size: 13px; color: #64748b;">{{ comp.amenities }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+
+<!-- Test Set Model Verification Table (Empirical Validation) -->
+{% if test_verifications %}
+<div class="data-card" style="margin-top: 35px; margin-bottom: 30px;">
+    <h3>Unseen Test Set Verification &amp; Accuracy Proof</h3>
+    <p style="color: #64748b; font-size: 14px; margin-top: -10px; margin-bottom: 16px;">
+        Independent verification comparing actual historical rental contracts against model generated predictions on held-out listings:
+    </p>
+    <table class="data-table" style="width: 100%;">
+        <thead>
+            <tr>
+                <th>Listing Location</th>
+                <th>Layout</th>
+                <th>Living Area</th>
+                <th>Actual Price</th>
+                <th>Predicted Price</th>
+                <th>Variance ($)</th>
+                <th>Accuracy Calibration</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in test_verifications %}
+            <tr>
+                <td><strong>{{ v.city }}</strong>, {{ v.state }}</td>
+                <td>{{ v.beds }} bed / {{ v.baths }} bath</td>
+                <td>{{ v.sqft }} sq.ft.</td>
+                <td>{{ v.actual }}</td>
+                <td><strong style="color: #1f3a5f;">{{ v.predicted }}</strong></td>
+                <td><span style="color: {% if v.variance.startswith('+') %}#b91c1c{% else %}#15803d{% endif %}; font-weight: 600;">{{ v.variance }}</span></td>
+                <td><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">{{ v.accuracy }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<style>
+.preset-btn {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f3a5f;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.preset-btn:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+}
+.amenity-tile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #334155;
+    transition: background 0.15s ease;
+}
+.amenity-tile:hover {
+    background: #f1f5f9;
+}
+.amenity-tile input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: #1f3a5f;
+}
+</style>
+
+<script>
+function uncheckAllAmenities() {
+    var checkboxes = document.querySelectorAll('#predictorForm input[type="checkbox"]');
+    checkboxes.forEach(function(cb) {
+        cb.checked = false;
+    });
+}
+
+function applyPreset(presetType) {
+    uncheckAllAmenities();
+    if (presetType === 'studio') {
+        document.getElementById('bedrooms').value = 1;
+        document.getElementById('bathrooms').value = 1.0;
+        document.getElementById('square_feet').value = 550;
+        document.getElementById('state').value = 'CA';
+        document.getElementById('cityname').value = 'San Francisco';
+        document.getElementById('pets_allowed').value = 'Cats';
+        document.getElementById('has_photo').value = 'Yes';
+        document.getElementById('chk_ac').checked = true;
+        document.getElementById('chk_wd').checked = true;
+        document.getElementById('chk_elevator').checked = true;
+        document.getElementById('chk_wood').checked = true;
+        document.getElementById('chk_dishwasher').checked = true;
+    } else if (presetType === 'suburban') {
+        document.getElementById('bedrooms').value = 3;
+        document.getElementById('bathrooms').value = 2.5;
+        document.getElementById('square_feet').value = 1850;
+        document.getElementById('state').value = 'TX';
+        document.getElementById('cityname').value = 'Dallas';
+        document.getElementById('pets_allowed').value = 'Cats,Dogs';
+        document.getElementById('has_photo').value = 'Yes';
+        document.getElementById('chk_parking').checked = true;
+        document.getElementById('chk_pool').checked = true;
+        document.getElementById('chk_patio').checked = true;
+        document.getElementById('chk_storage').checked = true;
+        document.getElementById('chk_ac').checked = true;
+        document.getElementById('chk_dishwasher').checked = true;
+        document.getElementById('chk_gated').checked = true;
+    } else if (presetType === 'luxury') {
+        document.getElementById('bedrooms').value = 3;
+        document.getElementById('bathrooms').value = 3.0;
+        document.getElementById('square_feet').value = 2400;
+        document.getElementById('state').value = 'NY';
+        document.getElementById('cityname').value = 'New York';
+        document.getElementById('pets_allowed').value = 'Cats,Dogs';
+        document.getElementById('has_photo').value = 'Yes';
+        // Check ALL amenities
+        document.querySelectorAll('#predictorForm input[type="checkbox"]').forEach(function(cb) {
+            cb.checked = true;
+        });
+    } else if (presetType === 'budget') {
+        document.getElementById('bedrooms').value = 1;
+        document.getElementById('bathrooms').value = 1.0;
+        document.getElementById('square_feet').value = 650;
+        document.getElementById('state').value = 'OH';
+        document.getElementById('cityname').value = 'Columbus';
+        document.getElementById('pets_allowed').value = 'None';
+        document.getElementById('has_photo').value = 'No';
+        document.getElementById('chk_parking').checked = true;
+        document.getElementById('chk_ac').checked = true;
+    }
+}
+</script>
+{% endblock %}

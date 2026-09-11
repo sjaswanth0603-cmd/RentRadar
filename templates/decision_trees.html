@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}RentRadar - Decision Trees & Ensembles{% endblock %}
+
+{% block content %}
+<h2>Decision Trees &amp; Ensemble Learning</h2>
+<p class="page-subtitle" style="color: #666; margin-top: -20px; margin-bottom: 24px; font-size: 15px;">
+    Comparative benchmarking of non-linear tree algorithms, bagging ensembles, and gradient boosted architectures.
+</p>
+
+{% if error %}
+<div class="error">
+    <strong>Ensemble Pipeline Error:</strong> {{ error }}
+</div>
+{% endif %}
+
+{% if results %}
+<!-- Algorithm Selector Dropdown -->
+<div class="data-card" style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #cbd5e1;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <label for="algoSelect" style="font-weight: bold; color: #1f3a5f; font-size: 16px; margin-right: 12px;">
+                Select Algorithm Architecture (7 Models):
+            </label>
+            <select id="algoSelect" onchange="switchModel(this.value)" style="padding: 10px 16px; border: 1px solid #94a3b8; border-radius: 6px; font-size: 15px; font-weight: 600; color: #1f3a5f; background: white; cursor: pointer; min-width: 280px;">
+                {% for key in results.algorithm_keys %}
+                <option value="{{ key }}" {% if key == results.default_model %}selected{% endif %}>
+                    {{ results.models[key].name }} ({{ results.models[key].family }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <span style="font-size: 13px; color: #64748b;">Champion Architecture:</span>
+            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 13px; margin-left: 5px;">
+                🏆 {{ results.champion.name }} (Test R²: {{ results.champion.test_r2 }})
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Dynamic Single Results Card (Controlled by Dropdown) -->
+{% for key, m in results.models.items() %}
+<div id="model-card-{{ key }}" class="algo-detail-card data-card" style="margin-bottom: 30px; {% if key != results.default_model %}display: none;{% endif %}">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+        <div>
+            <h3 style="margin: 0; color: #1f3a5f; font-size: 22px;">{{ m.name }}</h3>
+            <span style="display: inline-block; margin-top: 5px; background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                {{ m.family }}
+            </span>
+            <p style="color: #64748b; font-size: 14px; margin: 8px 0 0 0;">{{ m.description }}</p>
+        </div>
+        <div style="text-align: right;">
+            <span style="font-size: 13px; color: #64748b;">Training Runtime:</span><br>
+            <strong style="color: #1f3a5f; font-size: 16px;">{{ m.training_time }}s</strong>
+        </div>
+    </div>
+
+    <!-- Core Metrics Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 24px;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
+            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">Test R² Score</div>
+            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">{{ m.test_r2 }}</div>
+            <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">Train R²: {{ m.train_r2 }}</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
+            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">Mean Absolute Error</div>
+            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">${{ "{:,.2f}".format(m.mae) }}</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Average Deviation</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
+            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">Root Mean Squared Error</div>
+            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">${{ "{:,.2f}".format(m.rmse) }}</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Penalizes Outliers</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
+            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">MAPE Error Rate</div>
+            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">{{ m.mape }}%</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Relative Accuracy</div>
+        </div>
+    </div>
+
+    <!-- Feature Importances Breakdown -->
+    {% if m.feature_importances %}
+    <h4 style="text-align: left; margin: 18px 0 12px 0; color: #1f3a5f; font-size: 16px;">
+        Top Primary Feature Importances (Normalized Contribution %):
+    </h4>
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+        {% for feat in m.feature_importances %}
+        <div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px;">
+                <span style="font-weight: 600; color: #334155;">{{ feat.feature }}</span>
+                <span style="color: #1f3a5f; font-weight: bold;">{{ feat.importance }}%</span>
+            </div>
+            <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
+                <div style="width: {{ feat.importance }}%; background: #5ba0d7; height: 100%; border-radius: 4px;"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Hyperparameters -->
+    <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #475569;">
+        <strong>Configured Hyperparameters:</strong> 
+        {% for hp, val in m.hyperparams.items() %}
+            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin-right: 6px;">{{ hp }}={{ val }}</code>
+        {% endfor %}
+    </div>
+
+</div>
+{% endfor %}
+
+<!-- Comprehensive 9-Model Comparison Benchmark Table -->
+<div class="data-card" style="margin-top: 35px; margin-bottom: 28px;">
+    <h3>Comprehensive 9-Model Benchmark Leaderboard</h3>
+    <p style="color: #64748b; font-size: 14px; margin-top: -10px; margin-bottom: 16px;">
+        All 7 tree and ensemble architectures evaluated against unregularized (OLS) and regularized (Ridge) linear baselines on unseen test listings.
+    </p>
+    <table class="data-table" style="width: 100%;">
+        <thead>
+            <tr>
+                <th style="width: 60px;">Rank</th>
+                <th>Model Architecture</th>
+                <th>Algorithmic Family</th>
+                <th>Test R²</th>
+                <th>Train R²</th>
+                <th>MAE ($)</th>
+                <th>RMSE ($)</th>
+                <th>MAPE (%)</th>
+                <th>Runtime</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in results.benchmark %}
+            <tr {% if loop.first %}style="background-color: #f0fdf4; font-weight: 600;"{% elif item.id == 'linear_regression' or item.id == 'ridge' %}style="background-color: #f8fafc;"{% endif %}>
+                <td>
+                    {% if loop.first %}
+                        <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">#1</span>
+                    {% else %}
+                        #{{ loop.index }}
+                    {% endif %}
+                </td>
+                <td>
+                    <strong>{{ item.name }}</strong>
+                    {% if loop.first %}
+                        <span style="display: inline-block; background: #dcfce7; color: #15803d; font-size: 11px; padding: 2px 6px; border-radius: 3px; margin-left: 5px;">Champion</span>
+                    {% endif %}
+                </td>
+                <td><span style="font-size: 12px; color: #64748b;">{{ item.family }}</span></td>
+                <td><strong style="color: #1f3a5f;">{{ item.test_r2 }}</strong></td>
+                <td>{{ item.train_r2 }}</td>
+                <td>${{ "{:,.2f}".format(item.mae) }}</td>
+                <td>${{ "{:,.2f}".format(item.rmse) }}</td>
+                <td>{{ item.mape }}%</td>
+                <td>{{ item.training_time }}s</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Workflow Next Step -->
+<div class="eda-next" style="margin-top: 35px; margin-bottom: 30px;">
+    <a href="{{ url_for('predictor') }}" class="next-button">
+        Continue to Interactive Rent Predictor &rarr;
+    </a>
+</div>
+{% endif %}
+
+<script>
+function switchModel(selectedId) {
+    var cards = document.querySelectorAll('.algo-detail-card');
+    cards.forEach(function(card) {
+        card.style.display = 'none';
+    });
+    var target = document.getElementById('model-card-' + selectedId);
+    if (target) {
+        target.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

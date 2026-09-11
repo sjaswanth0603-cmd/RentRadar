@@ -4,4 +4,6 @@ openpyxl
 matplotlib
 seaborn
 numpy
- 
+scikit-learn
+xgboost
+lightgbm

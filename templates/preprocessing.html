@@ -1,367 +1,184 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <title>RentRadar - Preprocessing</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
-
-</head>
-
-<body>
-
-<header class="topbar">
-    <h1>RentRadar</h1>
-</header>
-
-
-<div class="layout">
-
-
-    <!-- =====================================================
-         SIDEBAR
-         ===================================================== -->
-
-    <nav class="sidebar">
-
-        <ul>
-
-            <!-- DASHBOARD -->
-
-            <li>
-                <a href="{{ url_for('index') }}"
-                   class="menu-item {% if active == 'none' %}active{% endif %}">
-                    Dashboard
-                </a>
-            </li>
-
-
-            <!-- DATA LOADING -->
-
-            <li>
-                <a href="{{ url_for('data_loading') }}"
-                   class="menu-item {% if active == 'data-loading' %}active{% endif %}">
-                    Data Loading
-                </a>
-            </li>
-
-
-            <!-- EDA -->
-
-            <li>
-                <a href="{{ url_for('eda') }}"
-                   class="menu-item {% if active == 'eda' %}active{% endif %}">
-                    EDA
-                </a>
-            </li>
-
-
-            <!-- PREPROCESSING -->
-
-            <li>
-                <a href="{{ url_for('preprocessing') }}"
-                   class="menu-item {% if active == 'preprocessing' %}active{% endif %}">
-                    Preprocessing
-                </a>
-            </li>
-
-
-            <!-- LINEAR REGRESSION -->
-
-            <li>
-                <a href="{{ url_for('linear_regression') }}"
-                   class="menu-item {% if active == 'linear-regression' %}active{% endif %}">
-                    Linear Regression
-                </a>
-            </li>
-
-
-            <!-- LOGISTIC REGRESSION -->
-
-            <li>
-                <a href="{{ url_for('logistic_regression') }}"
-                   class="menu-item {% if active == 'logistic-regression' %}active{% endif %}">
-                    Logistic Regression
-                </a>
-            </li>
-
-        </ul>
-
-    </nav>
-
-
-    <!-- =====================================================
-         MAIN CONTENT
-         ===================================================== -->
-
-    <main class="content">
-
-        <h2>Data Preprocessing</h2>
-
-
-        {% if error %}
-
-            <div class="error">
-                {{ error }}
-            </div>
-
-        {% endif %}
-
-
-        {% if results %}
-
-
-            <!-- =================================================
-                 SUMMARY
-                 ================================================= -->
-
-            <h3>Preprocessing Summary</h3>
-
-            <table class="summary-table">
-
-                <tr>
-                    <td>Target Variable</td>
-
-                    <td>
-                        {{ results.target_name }}
-                    </td>
-                </tr>
-
-
-                <tr>
-                    <td>Original Rows</td>
-
-                    <td>
-                        {{ results.original_rows }}
-                    </td>
-                </tr>
-
-
-                <tr>
-                    <td>Training Samples</td>
-
-                    <td>
-                        {{ results.training_samples }}
-                    </td>
-                </tr>
-
-
-                <tr>
-                    <td>Testing Samples</td>
-
-                    <td>
-                        {{ results.testing_samples }}
-                    </td>
-                </tr>
-
-
-                <tr>
-                    <td>Original Features</td>
-
-                    <td>
-                        {{ results.original_features }}
-                    </td>
-                </tr>
-
-
-                <tr>
-                    <td>Processed Features</td>
-
-                    <td>
-                        {{ results.processed_features }}
-                    </td>
-                </tr>
-
-            </table>
-
-
-            <!-- =================================================
-                 BEFORE PREPROCESSING
-                 ================================================= -->
-
-            <h3>Before Preprocessing</h3>
-
-            <table class="summary-table">
-
-                <tr>
-
-                    <td>
-                        Training Data
-                    </td>
-
-                    <td>
-
-                        {{ results.train_shape[0] }}
-
-                        ×
-
-                        {{ results.original_features }}
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        Testing Data
-                    </td>
-
-                    <td>
-
-                        {{ results.test_shape[0] }}
-
-                        ×
-
-                        {{ results.original_features }}
-
-                    </td>
-
-                </tr>
-
-            </table>
-
-
-            <!-- =================================================
-                 AFTER PREPROCESSING
-                 ================================================= -->
-
-            <h3>After Preprocessing</h3>
-
-            <table class="summary-table">
-
-                <tr>
-
-                    <td>
-                        Training Data
-                    </td>
-
-                    <td>
-
-                        {{ results.train_shape[0] }}
-
-                        ×
-
-                        {{ results.processed_features }}
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        Testing Data
-                    </td>
-
-                    <td>
-
-                        {{ results.test_shape[0] }}
-
-                        ×
-
-                        {{ results.processed_features }}
-
-                    </td>
-
-                </tr>
-
-            </table>
-
-
-            <!-- =================================================
-                 OPERATIONS
-                 ================================================= -->
-
-            <h3>Preprocessing Operations</h3>
-
-            <div class="info-box">
-
-                <ul>
-
-                    <li>
-                        Duplicate rows removed
-                    </li>
-
-                    <li>
-                        Invalid target values removed
-                    </li>
-
-                    <li>
-                        Numerical missing values handled using
-                        median
-                    </li>
-
-                    <li>
-                        Categorical missing values handled using
-                        most frequent value
-                    </li>
-
-                    <li>
-                        Numerical features standardized using
-                        StandardScaler
-                    </li>
-
-                    <li>
-                        Categorical features encoded using
-                        OneHotEncoder
-                    </li>
-
-                    <li>
-                        Dataset divided into
-                        80% training and 20% testing
-                    </li>
-
-                    <li>
-                        Target variable:
-                        <strong>price</strong>
-                    </li>
-
-                </ul>
-
-            </div>
-
-
-            <!-- =================================================
-                 SUCCESS
-                 ================================================= -->
-
-            <div class="success">
-
-                ✓ Preprocessing completed successfully.
-
-            </div>
-
-
-            <!-- =================================================
-                 NEXT STEP
-                 ================================================= -->
-
-            <div class="eda-next">
-
-                <a href="{{ url_for('linear_regression') }}"
-                   class="next-button">
-
-                    Continue to Linear Regression →
-
-                </a>
-
-            </div>
-
-
-        {% endif %}
-
-
-    </main>
+{% extends "base.html" %}
+
+{% block title %}RentRadar - Preprocessing Pipeline & Feature Engineering{% endblock %}
+
+{% block content %}
+<h2>Data Preprocessing &amp; Feature Engineering</h2>
+<p class="page-subtitle">Multi-stage pipeline engineering tabular predictors, extracting listing amenities, and enforcing strict data leakage prevention.</p>
+
+{% if error %}
+<div class="error">
+    <strong>Preprocessing Error:</strong><br><br>
+    {{ error }}
+</div>
+{% endif %}
+
+{% if results %}
+
+<!-- =====================================================
+     PIPELINE SUMMARY CARD
+     ===================================================== -->
+<div class="chart-card-single" style="margin-bottom: 28px;">
+    <h4 style="text-align: left; margin-bottom: 14px; font-size: 18px; color: #1f3a5f;">
+        Pipeline Execution Summary
+    </h4>
+    <table class="summary-table" style="width: 100%;">
+        <tr>
+            <td style="width: 280px;">Target Variable</td>
+            <td><strong>{{ results.target_name }}</strong> (Continuous Numeric Rental Price)</td>
+        </tr>
+        <tr>
+            <td>Raw Usable Listings</td>
+            <td>{{ "{:,}".format(results.original_rows) }} records</td>
+        </tr>
+        <tr>
+            <td>Target-Validated Listings</td>
+            <td><strong>{{ "{:,}".format(results.cleaned_rows) }}</strong> listings ({{ results.target_missing }} nulls, {{ results.target_invalid }} zero/negative values removed)</td>
+        </tr>
+        <tr>
+            <td>Training Split (80%)</td>
+            <td><strong>{{ "{:,}".format(results.training_samples) }}</strong> samples (Fitted strictly on train split to prevent leakage)</td>
+        </tr>
+        <tr>
+            <td>Held-Out Validation Split (20%)</td>
+            <td><strong>{{ "{:,}".format(results.testing_samples) }}</strong> samples (Unseen evaluation)</td>
+        </tr>
+        <tr>
+            <td>Total Processed Feature Dimensions</td>
+            <td><strong style="color: #1f3a5f; font-size: 18px;">{{ "{:,}".format(results.processed_features) }}</strong> encoded predictors</td>
+        </tr>
+    </table>
+</div>
+
+<!-- =====================================================
+     FEATURE SPACES BREAKDOWN (BASE + ENGINEERED)
+     ===================================================== -->
+<h3>Engineered Feature Spaces</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
+    
+    <!-- CARD 1: AMENITIES -->
+    <div class="chart-card-single" style="margin-bottom: 0;">
+        <h4 style="color: #1f3a5f; text-align: left;">1. Extracted Amenity Predictors (13 Flags + Count)</h4>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">Parsed from comma-delimited listing strings:</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            {% for f in results.engineered_amenities %}
+            <span class="badge badge-model" style="font-size: 12px;">{{ f }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- CARD 2: STRUCTURAL RATIOS & NLP -->
+    <div class="chart-card-single" style="margin-bottom: 0;">
+        <h4 style="color: #1f3a5f; text-align: left;">2. Structural Ratios &amp; Text Metrics</h4>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">Derived non-linear dimensions &amp; keyword indicators:</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            {% for f in results.engineered_structural %}
+            <span class="badge badge-below" style="font-size: 12px;">{{ f }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- CARD 3: BASE PHYSICAL & GEOGRAPHIC -->
+    <div class="chart-card-single" style="margin-bottom: 0;">
+        <h4 style="color: #1f3a5f; text-align: left;">3. Physical &amp; Geographic Coordinates</h4>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">Continuous tabular property attributes:</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <span class="badge badge-model">bedrooms</span>
+            <span class="badge badge-model">bathrooms</span>
+            <span class="badge badge-model">square_feet</span>
+            <span class="badge badge-model">latitude</span>
+            <span class="badge badge-model">longitude</span>
+        </div>
+    </div>
+
+    <!-- CARD 4: CATEGORICAL ENCODING -->
+    <div class="chart-card-single" style="margin-bottom: 0;">
+        <h4 style="color: #1f3a5f; text-align: left;">4. Categorical Variables (One-Hot Encoded)</h4>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">Expanded with handle_unknown='ignore':</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            {% for c in results.categorical_features %}
+            <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 12px;">{{ c }}</span>
+            {% endfor %}
+        </div>
+    </div>
 
 </div>
 
-</body>
+<!-- =====================================================
+     ANTI-LEAKAGE EXCLUSION RATIONALE
+     ===================================================== -->
+<h3>Anti-Leakage &amp; Feature Screening Rationale</h3>
+<div class="table-wrapper" style="margin-bottom: 35px;">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 160px;">Column Name</th>
+                <th style="width: 140px;">Status</th>
+                <th>Engineering Justification</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for col, reason in results.dropped_reasons.items() %}
+            <tr>
+                <td><strong>{{ col }}</strong></td>
+                <td>
+                    {% if 'LEAKAGE' in reason %}
+                    <span class="status-badge status-high">Target Leakage</span>
+                    {% else %}
+                    <span class="status-badge status-moderate">Parsed / Excluded</span>
+                    {% endif %}
+                </td>
+                <td>{{ reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-</html>
+<!-- =====================================================
+     MISSING VALUE IMPUTATION STRATEGY
+     ===================================================== -->
+{% if results.missing_report %}
+<h3>Missing Value Imputation Strategy</h3>
+<div class="table-wrapper" style="margin-bottom: 35px;">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Missing Records</th>
+                <th>Missing Percentage</th>
+                <th>Applied Pipeline Strategy</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for col, info in results.missing_report.items() %}
+            <tr>
+                <td><strong>{{ col }}</strong></td>
+                <td>{{ "{:,}".format(info.count) }}</td>
+                <td>{{ info.pct }}%</td>
+                <td>
+                    {% if col in results.numerical_features %}
+                    <code>SimpleImputer(strategy='median') + StandardScaler()</code>
+                    {% else %}
+                    <code>SimpleImputer(strategy='most_frequent') + OneHotEncoder()</code>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- NAVIGATION ACTION -->
+<div class="eda-next" style="display: flex; gap: 16px; align-items: center; margin-top: 25px;">
+    <a href="{{ url_for('linear_regression') }}" class="next-button">
+        Continue to Linear Regression &rarr;
+    </a>
+    <a href="{{ url_for('eda') }}" style="color: #1f3a5f; text-decoration: none; font-size: 15px; font-weight: 500;">
+        &larr; Back to EDA
+    </a>
+</div>
+
+{% endif %}
+{% endblock %}

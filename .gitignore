@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .venv/
 .idea/
+datasets/.cache_dedup.pkl
+datasets/*.pkl
