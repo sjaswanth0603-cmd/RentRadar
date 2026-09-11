@@ -1,692 +1,189 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>RentRadar - EDA</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-</head>
-
-
-<body>
-
-
-<!-- =========================================================
-     TOP BAR
-     ========================================================= -->
-
-<header class="topbar">
-
-    <h1>
-        RentRadar
-    </h1>
-
-</header>
-
-
-<div class="layout">
-
-
-    <!-- =====================================================
-         SIDEBAR
-         ===================================================== -->
-
-    <nav class="sidebar">
-
-    <ul>
-
-        <li>
-            <a href="{{ url_for('index') }}"
-               class="menu-item">
-                Dashboard
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ url_for('data_loading') }}"
-               class="menu-item {% if active == 'data-loading' %}active{% endif %}">
-                Data Loading
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ url_for('eda') }}"
-               class="menu-item {% if active == 'eda' %}active{% endif %}">
-                EDA
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ url_for('preprocessing') }}"
-               class="menu-item {% if active == 'preprocessing' %}active{% endif %}">
-                Preprocessing
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ url_for('linear_regression') }}"
-               class="menu-item {% if active == 'linear-regression' %}active{% endif %}">
-                Linear Regression
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ url_for('logistic_regression') }}"
-               class="menu-item {% if active == 'logistic-regression' %}active{% endif %}">
-                Logistic Regression
-            </a>
-        </li>
-
-    </ul>
-
-</nav>
-
-
-
-    <!-- =====================================================
-         MAIN CONTENT
-         ===================================================== -->
-
-    <main class="content">
-
-
-        <h2>
-            Exploratory Data Analysis
-        </h2>
-
-
-        <!-- =================================================
-             ERROR
-             ================================================= -->
-
-        {% if error %}
-
-            <div class="error">
-
-                <strong>
-                    EDA Error:
-                </strong>
-
-                <br><br>
-
-                {{ error }}
-
-            </div>
-
-        {% endif %}
-
-
-
-        <!-- =================================================
-             EDA RESULTS
-             ================================================= -->
-
-        {% if results %}
-
-
-            <!-- =============================================
-                 DATASET OVERVIEW
-                 ============================================= -->
-
-            <h3>
-                Dataset Overview
-            </h3>
-
-
-            <table class="summary-table">
-
-                <tr>
-
-                    <td>
-                        Total Rows
-                    </td>
-
-                    <td>
-                        {{ "{:,}".format(results.n_rows) }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        Total Columns
-                    </td>
-
-                    <td>
-                        {{ results.n_cols }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        Duplicate Rows
-                    </td>
-
-                    <td>
-                        {{ "{:,}".format(results.duplicate_count) }}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        Duplicate IDs
-                    </td>
-
-                    <td>
-                        {{ "{:,}".format(results.duplicate_id_count) }}
-                    </td>
-
-                </tr>
-
-            </table>
-
-
-
-            <!-- =============================================
-                 DATASET SOURCE COUNTS
-                 ============================================= -->
-
-            <h3>
-                Dataset Sources
-            </h3>
-
-
-            <table class="summary-table">
-
-                {% for source, count in results.source_counts.items() %}
-
-                    <tr>
-
-                        <td>
-                            {{ source }}
-                        </td>
-
-                        <td>
-                            {{ "{:,}".format(count) }}
-                        </td>
-
-                    </tr>
-
-                {% endfor %}
-
-            </table>
-
-
-
-            <!-- =============================================
-                 MISSING VALUES
-                 ============================================= -->
-
-            <h3>
-                Missing Values
-            </h3>
-
-
-            {% if results.missing %}
-
-                <div class="table-wrapper">
-
-                    <table class="data-table">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>
-                                    Column
-                                </th>
-
-                                <th>
-                                    Missing Values
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                        {% for column, count in results.missing.items() %}
-
-                            <tr>
-
-                                <td>
-                                    {{ column }}
-                                </td>
-
-                                <td>
-                                    {{ "{:,}".format(count) }}
-                                </td>
-
-                            </tr>
-
-                        {% endfor %}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-
-            {% else %}
-
-                <div class="success">
-
-                    ✓ No missing values found.
-
-                </div>
-
-            {% endif %}
-
-
-
-            <!-- =============================================
-                 OUTLIER ANALYSIS
-                 ============================================= -->
-
-            <h3>
-                Outlier Analysis
-            </h3>
-
-
-            <div class="table-wrapper">
-
-                <table class="data-table">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Feature
-                            </th>
-
-                            <th>
-                                Outliers
-                            </th>
-
-                            <th>
-                                Q1
-                            </th>
-
-                            <th>
-                                Q3
-                            </th>
-
-                            <th>
-                                IQR
-                            </th>
-
-                            <th>
-                                Lower Limit
-                            </th>
-
-                            <th>
-                                Upper Limit
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                    {% for column, count in results.outlier_counts.items() %}
-
-                        <tr>
-
-                            <td>
-                                {{ column }}
-                            </td>
-
-                            <td>
-                                {{ "{:,}".format(count) }}
-                            </td>
-
-                            <td>
-                                {{ results.outlier_limits[column].q1 }}
-                            </td>
-
-                            <td>
-                                {{ results.outlier_limits[column].q3 }}
-                            </td>
-
-                            <td>
-                                {{ results.outlier_limits[column].iqr }}
-                            </td>
-
-                            <td>
-                                {{ results.outlier_limits[column].lower }}
-                            </td>
-
-                            <td>
-                                {{ results.outlier_limits[column].upper }}
-                            </td>
-
-                        </tr>
-
-                    {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-
-            <!-- =============================================
-                 NUMERIC SUMMARY
-                 ============================================= -->
-
-            <h3>
-                Numeric Summary
-            </h3>
-
-
-            <div class="table-wrapper">
-
-                <table class="data-table">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Feature
-                            </th>
-
-                            <th>
-                                Minimum
-                            </th>
-
-                            <th>
-                                Maximum
-                            </th>
-
-                            <th>
-                                Mean
-                            </th>
-
-                            <th>
-                                Median
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                    {% for column, values in results.numeric_summary.items() %}
-
-                        <tr>
-
-                            <td>
-                                {{ column }}
-                            </td>
-
-                            <td>
-                                {{ values.min }}
-                            </td>
-
-                            <td>
-                                {{ values.max }}
-                            </td>
-
-                            <td>
-                                {{ values.mean }}
-                            </td>
-
-                            <td>
-                                {{ values.median }}
-                            </td>
-
-                        </tr>
-
-                    {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-
-
-            <!-- =============================================
-                 EDA GRAPHS
-                 ============================================= -->
-
-            <h3>
-                EDA Visualizations
-            </h3>
-
-
-            <div class="chart-grid">
-
-
-                {% for chart in results.charts %}
-
-
-                    <div class="chart-card">
-
-
-                        <!-- CHART TITLE -->
-
-                        {% if chart == "missing_values.png" %}
-
-                            <h4>
-                                Missing Values Analysis
-                            </h4>
-
-
-                        {% elif chart == "price_distribution.png" %}
-
-                            <h4>
-                                Rental Price Distribution
-                            </h4>
-
-
-                        {% elif chart == "price_boxplot.png" %}
-
-                            <h4>
-                                Rental Price Outliers
-                            </h4>
-
-
-                        {% elif chart == "square_feet_distribution.png" %}
-
-                            <h4>
-                                Apartment Size Distribution
-                            </h4>
-
-
-                        {% elif chart == "square_feet_boxplot.png" %}
-
-                            <h4>
-                                Apartment Size Outliers
-                            </h4>
-
-
-                        {% elif chart == "bedrooms_distribution.png" %}
-
-                            <h4>
-                                Bedroom Distribution
-                            </h4>
-
-
-                        {% elif chart == "bedrooms_boxplot.png" %}
-
-                            <h4>
-                                Bedroom Outliers
-                            </h4>
-
-
-                        {% elif chart == "bathrooms_distribution.png" %}
-
-                            <h4>
-                                Bathroom Distribution
-                            </h4>
-
-
-                        {% elif chart == "bathrooms_boxplot.png" %}
-
-                            <h4>
-                                Bathroom Outliers
-                            </h4>
-
-
-                        {% elif chart == "top_cities.png" %}
-
-                            <h4>
-                                Top Cities by Listings
-                            </h4>
-
-
-                        {% elif chart == "top_states.png" %}
-
-                            <h4>
-                                Top States by Listings
-                            </h4>
-
-
-                        {% elif chart == "photo_availability.png" %}
-
-                            <h4>
-                                Photo Availability
-                            </h4>
-
-
-                        {% elif chart == "pets_allowed.png" %}
-
-                            <h4>
-                                Pet Policy Distribution
-                            </h4>
-
-
-                        {% elif chart == "price_vs_square_feet.png" %}
-
-                            <h4>
-                                Price vs Apartment Size
-                            </h4>
-
-
-                        {% elif chart == "price_vs_bedrooms.png" %}
-
-                            <h4>
-                                Price vs Bedrooms
-                            </h4>
-
-
-                        {% elif chart == "price_vs_bathrooms.png" %}
-
-                            <h4>
-                                Price vs Bathrooms
-                            </h4>
-
-
-                        {% elif chart == "correlation_heatmap.png" %}
-
-                            <h4>
-                                Feature Correlation Heatmap
-                            </h4>
-
-
-                        {% else %}
-
-                            <h4>
-                                {{ chart }}
-                            </h4>
-
-                        {% endif %}
-
-
-
-                        <!-- CHART IMAGE -->
-
-                        <img
-                            src="{{ url_for(
-                                'static',
-                                filename='charts/' + chart
-                            ) }}"
-                            alt="{{ chart }}"
-                        >
-
-
-                    </div>
-
-
-                {% endfor %}
-
-
-            </div>
-
-
-
-            <!-- =============================================
-                 EDA COMPLETED
-                 ============================================= -->
-
-            <div class="success">
-
-                ✓ Exploratory Data Analysis completed successfully.
-
-            </div>
-
-
-
-            <!-- =============================================
-                 CONTINUE TO PREPROCESSING
-                 ============================================= -->
-
-            <div class="eda-next">
-
-                <a
-                    href="{{ url_for('preprocessing') }}"
-                    class="next-button"
-                >
-
-                    Continue to Preprocessing →
-
-                </a>
-
-            </div>
-
-
-        {% endif %}
-
-
-    </main>
-
+{% extends "base.html" %}
+
+{% block title %}RentRadar - Exploratory Data Analysis{% endblock %}
+
+{% block content %}
+<h2>Exploratory Data Analysis</h2>
+<p class="page-subtitle" style="color: #666; margin-top: -20px; margin-bottom: 24px; font-size: 15px;">
+    Visual analysis and distributions of the apartment rental dataset.
+</p>
+
+{% if error %}
+<div class="error">
+    <strong>Error running EDA:</strong> {{ error }}
+</div>
+{% endif %}
+
+<!-- Statistical Outlier & Distribution Metrics -->
+{% if eda_data %}
+<div class="data-card" style="margin-bottom: 30px;">
+    <h3>Dataset Parametric Distributions</h3>
+    <table class="summary-table" style="width: 100%; margin-bottom: 10px;">
+        <thead>
+            <tr style="background: #e9eef5; color: #1f3a5f;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Metric</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Price ($ USD)</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Square Feet</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Median Value</strong></td>
+                <td>${{ "{:,.2f}".format(eda_data.price_stats.median) }}</td>
+                <td>{{ "{:,.1f}".format(eda_data.sqft_stats.median) }} sq ft</td>
+            </tr>
+            <tr>
+                <td><strong>Mean (Average)</strong></td>
+                <td>${{ "{:,.2f}".format(eda_data.price_stats.mean) }}</td>
+                <td>{{ "{:,.1f}".format(eda_data.sqft_stats.mean) }} sq ft</td>
+            </tr>
+            <tr>
+                <td><strong>Standard Deviation</strong></td>
+                <td>${{ "{:,.2f}".format(eda_data.price_stats.std) }}</td>
+                <td>{{ "{:,.1f}".format(eda_data.sqft_stats.std) }} sq ft</td>
+            </tr>
+            <tr>
+                <td><strong>Min / Max (Observed)</strong></td>
+                <td>${{ "{:,.0f}".format(eda_data.price_stats.min) }} &ndash; ${{ "{:,.0f}".format(eda_data.price_stats.max) }}</td>
+                <td>{{ "{:,.0f}".format(eda_data.sqft_stats.min) }} &ndash; {{ "{:,.0f}".format(eda_data.sqft_stats.max) }} sq ft</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+{% if eda_data.outlier_limits %}
+<div class="data-card" style="margin-bottom: 30px;">
+    <h3>IQR Outlier Analysis (Tukey's Fences)</h3>
+    <table class="summary-table" style="width: 100%; margin-bottom: 10px;">
+        <thead>
+            <tr style="background: #e9eef5; color: #1f3a5f;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Feature</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Q1 (25th)</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Q3 (75th)</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">IQR</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Valid Bounds [Lower, Upper]</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #d5dce5;">Outliers Detected</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for feat, limits in eda_data.outlier_limits.items() %}
+            <tr>
+                <td><strong>{{ feat|replace('_', ' ')|title }}</strong></td>
+                <td>{{ limits.q1 }}</td>
+                <td>{{ limits.q3 }}</td>
+                <td>{{ limits.iqr }}</td>
+                <td>[{{ limits.lower }}, {{ limits.upper }}]</td>
+                <td><strong style="color: #b00020;">{{ "{:,}".format(eda_data.outlier_counts[feat]) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- EDA Visualizations Header -->
+<h3 style="margin-top: 35px; margin-bottom: 20px;">EDA Visualizations</h3>
+
+<!-- Vertically Stacked Visualizations (Strictly ONE chart per card) -->
+<div class="chart-stack" style="display: flex; flex-direction: column; gap: 28px;">
+
+    <!-- 1. Missing Values -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/missing_values.png') }}" alt="Missing Values by Column" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 2. Rental Price Distribution -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_distribution.png') }}" alt="Rental Price Distribution" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 3. Rental Price Boxplot -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_boxplot.png') }}" alt="Rental Price Boxplot" style="width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 4. Square Feet Distribution -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/square_feet_distribution.png') }}" alt="Living Area Distribution" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 5. Price vs Square Feet -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_vs_square_feet.png') }}" alt="Rental Price vs Living Area" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 6. Bedrooms Distribution -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/bedrooms_distribution.png') }}" alt="Bedrooms Distribution" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 7. Bathrooms Distribution -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/bathrooms_distribution.png') }}" alt="Bathrooms Distribution" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 8. Price by Bedrooms -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_by_bedrooms.png') }}" alt="Median Price by Bedrooms" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 9. Price by Bathrooms -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_by_bathrooms.png') }}" alt="Median Price by Bathrooms" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 10. Top States -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/top_states.png') }}" alt="Top States by Volume" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 11. Price by State -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_by_state.png') }}" alt="Median Price by State" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 12. Pets Policy -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/pets_allowed.png') }}" alt="Pet Policy Distribution" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 13. Price by Pet Policy -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_by_pets.png') }}" alt="Price by Pet Policy" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 14. Photo Verification -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/has_photo.png') }}" alt="Photo Verification Distribution" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 15. Price by Photo -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_by_photo.png') }}" alt="Price by Photo Status" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 16. Correlation Heatmap -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/correlation_heatmap.png') }}" alt="Continuous Feature Correlation Heatmap" style="width: 100%; height: auto; max-height: 520px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 17. Amenity Rent Premiums (Engineered) -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/price_by_amenities.png') }}" alt="Median Rent Premium for Listings Offering Key Amenities" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
+    <!-- 18. Amenity Count Distribution (Engineered) -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/amenities_distribution.png') }}" alt="Total Amenities Count Distribution" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
 
 </div>
 
-
-</body>
-
-</html>
+<!-- Workflow Next Step -->
+<div class="eda-next" style="margin-top: 35px; margin-bottom: 30px;">
+    <a href="{{ url_for('preprocessing') }}" class="next-button">
+        Continue to Preprocessing &amp; Feature Engineering &rarr;
+    </a>
+</div>
+{% endblock %}
