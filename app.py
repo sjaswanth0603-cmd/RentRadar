@@ -9,12 +9,14 @@ from linear_regression import run_linear_regression
 from logistic_regression import run_logistic_regression
 from decision_trees import run_decision_trees
 from model_manager import manager
+from kmeans import run_kmeans
+
 
 app = Flask(__name__)
 
 
 # =========================================================
-# 1. DATA LOADING (HOME & /data-loading)
+# 1. DATA LOADING
 # =========================================================
 
 @app.route("/")
@@ -26,14 +28,22 @@ def index():
 def data_loading():
     error = None
     summary = None
+
     try:
         page = request.args.get("page", default=1, type=int)
         page_size = request.args.get("page_size", default=20, type=int)
+
         if page_size not in [10, 20, 50, 100]:
             page_size = 20
+
         if page < 1:
             page = 1
-        summary = get_data_summary(page=page, page_size=page_size)
+
+        summary = get_data_summary(
+            page=page,
+            page_size=page_size
+        )
+
     except Exception as e:
         error = f"Error profiling dataset: {e}"
 
@@ -46,15 +56,17 @@ def data_loading():
 
 
 # =========================================================
-# 2. EXPLORATORY DATA ANALYSIS (EDA)
+# 2. EXPLORATORY DATA ANALYSIS
 # =========================================================
 
 @app.route("/eda")
 def eda():
     error = None
     eda_data = None
+
     try:
         eda_data = run_eda()
+
     except Exception as e:
         error = f"Error running EDA pipeline: {e}"
 
@@ -74,8 +86,10 @@ def eda():
 def preprocessing():
     error = None
     summary = None
+
     try:
         summary = get_preprocessing_summary()
+
     except Exception as e:
         error = f"Error running preprocessing pipeline: {e}"
 
@@ -88,17 +102,20 @@ def preprocessing():
 
 
 # =========================================================
-# 4. LINEAR REGRESSION (OLS, RIDGE, LASSO)
+# 4. LINEAR REGRESSION
 # =========================================================
 
 @app.route("/linear-regression")
 @app.route("/linear_regression")
 @app.route("/regression")
 def linear_regression():
+
     error = None
     results = None
+
     try:
         results = run_linear_regression()
+
     except Exception as e:
         error = f"Error running linear regression: {e}"
 
@@ -111,17 +128,20 @@ def linear_regression():
 
 
 # =========================================================
-# 5. LOGISTIC REGRESSION (MARKET TIER CLASSIFICATION)
+# 5. LOGISTIC REGRESSION
 # =========================================================
 
 @app.route("/logistic-regression")
 @app.route("/logistic_regression")
 @app.route("/classification")
 def logistic_regression():
+
     error = None
     results = None
+
     try:
         results = run_logistic_regression()
+
     except Exception as e:
         error = f"Error running logistic regression: {e}"
 
@@ -134,17 +154,20 @@ def logistic_regression():
 
 
 # =========================================================
-# 6. DECISION TREES & ENSEMBLES (7 ALGORITHMS + 9 BENCHMARK)
+# 6. DECISION TREES & ENSEMBLES
 # =========================================================
 
 @app.route("/decision-trees")
 @app.route("/decision_trees")
 @app.route("/ensembles")
 def decision_trees():
+
     error = None
     results = None
+
     try:
         results = run_decision_trees()
+
     except Exception as e:
         error = f"Error training decision trees & ensembles: {e}"
 
@@ -157,37 +180,143 @@ def decision_trees():
 
 
 # =========================================================
-# 7. RENT PREDICTOR (ALL 13 AMENITIES & REAL-TIME VALUATION)
+# 7. K-MEANS CLUSTERING
+# =========================================================
+
+@app.route("/kmeans", methods=["GET", "POST"])
+@app.route("/k-means", methods=["GET", "POST"])
+def kmeans():
+
+    error = None
+    results = None
+
+    method = request.form.get(
+        "method",
+        "manual"
+    )
+
+    manual_k = request.form.get(
+        "manual_k",
+        3,
+        type=int
+    )
+
+    min_k = request.form.get(
+        "min_k",
+        2,
+        type=int
+    )
+
+    max_k = request.form.get(
+        "max_k",
+        10,
+        type=int
+    )
+
+    if request.method == "POST":
+
+        try:
+
+            if method not in [
+                "manual",
+                "elbow",
+                "silhouette"
+            ]:
+                method = "manual"
+
+            if manual_k < 2:
+                manual_k = 2
+
+            if min_k < 2:
+                min_k = 2
+
+            if max_k <= min_k:
+                max_k = min_k + 1
+
+            if max_k > 15:
+                max_k = 15
+
+            results = run_kmeans(
+                method=method,
+                manual_k=manual_k,
+                min_k=min_k,
+                max_k=max_k
+            )
+
+        except Exception as e:
+
+            error = f"Error running K-Means clustering: {e}"
+
+    return render_template(
+        "kmeans.html",
+        active="kmeans",
+        results=results,
+        error=error,
+        method=method,
+        manual_k=manual_k,
+        min_k=min_k,
+        max_k=max_k
+    )
+
+
+# =========================================================
+# 8. RENT PREDICTOR
 # =========================================================
 
 @app.route("/predictor", methods=["GET", "POST"])
 @app.route("/predict", methods=["GET", "POST"])
 def predictor():
+
     manager.initialize()
+
     models_list = manager.get_available_models()
     test_verifications = manager.get_test_verifications()
 
     result = None
     input_data = None
     input_amenities = []
+
     selected_model = "lightgbm"
 
     if request.method == "POST":
+
         input_data = request.form
-        selected_model = request.form.get("model_id", "lightgbm")
-        
-        # Extract active amenities for maintaining form state
+
+        selected_model = request.form.get(
+            "model_id",
+            "lightgbm"
+        )
+
         amenity_flags = [
-            "has_parking", "has_pool", "has_gym", "has_washer_dryer",
-            "has_ac", "has_dishwasher", "has_patio_deck", "has_storage",
-            "has_clubhouse", "has_fireplace", "has_wood_floors",
-            "has_gated", "has_elevator", "feat_luxury"
+            "has_parking",
+            "has_pool",
+            "has_gym",
+            "has_washer_dryer",
+            "has_ac",
+            "has_dishwasher",
+            "has_patio_deck",
+            "has_storage",
+            "has_clubhouse",
+            "has_fireplace",
+            "has_wood_floors",
+            "has_gated",
+            "has_elevator",
+            "feat_luxury"
         ]
-        input_amenities = [k for k in amenity_flags if request.form.get(k)]
+
+        input_amenities = [
+            k for k in amenity_flags
+            if request.form.get(k)
+        ]
 
         try:
-            result = manager.predict(dict(request.form))
+
+            result = manager.predict(
+                dict(request.form)
+            )
+
         except Exception as e:
+
             result = {
                 "predicted_price": "1,450.00",
                 "raw_price": 1450.0,
@@ -197,11 +326,20 @@ def predictor():
                 "pct_diff": 7.4,
                 "diff_from_med": 100.0,
                 "model_used": selected_model,
-                "active_amenities": ["Air Conditioning"],
+                "active_amenities": [
+                    "Air Conditioning"
+                ],
                 "amenities_count": 1,
-                "insights": [f"Valuation completed with fallback notice: {e}"],
+                "insights": [
+                    f"Valuation completed with fallback notice: {e}"
+                ],
                 "comparables": [],
-                "input_summary": {"state": "TX", "bedrooms": 2, "bathrooms": 1.5, "square_feet": 950}
+                "input_summary": {
+                    "state": "TX",
+                    "bedrooms": 2,
+                    "bathrooms": 1.5,
+                    "square_feet": 950
+                }
             }
 
     return render_template(
@@ -221,17 +359,52 @@ def predictor():
 # =========================================================
 
 def find_open_port(start_port=5000, max_attempts=5):
-    for port in range(start_port, start_port + max_attempts):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(("127.0.0.1", port)) != 0:
+
+    for port in range(
+        start_port,
+        start_port + max_attempts
+    ):
+
+        with socket.socket(
+            socket.AF_INET,
+            socket.SOCK_STREAM
+        ) as s:
+
+            if s.connect_ex(
+                ("127.0.0.1", port)
+            ) != 0:
+
                 return port
+
     return start_port
 
 
+# =========================================================
+# RUN APPLICATION
+# =========================================================
+
 if __name__ == "__main__":
+
     port = find_open_port(5000)
-    print(f"\n=======================================================")
-    print(f" RentRadar AI Rental Intelligence Dashboard Live")
-    print(f" URL: http://127.0.0.1:{port}")
-    print(f"=======================================================\n")
-    app.run(host="127.0.0.1", port=port, debug=False)
+
+    print(
+        "\n======================================================="
+    )
+
+    print(
+        " RentRadar AI Rental Intelligence Dashboard Live"
+    )
+
+    print(
+        f" URL: http://127.0.0.1:{port}"
+    )
+
+    print(
+        "=======================================================\n"
+    )
+
+    app.run(
+        host="127.0.0.1",
+        port=port,
+        debug=False
+    )

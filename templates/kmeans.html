@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+
+{% block title %}
+RentRadar - K-Means Clustering
+{% endblock %}
+
+
+{% block content %}
+
+<h2>K-Means Clustering</h2>
+
+<p class="page-description">
+    Unsupervised learning for identifying natural groups of rental
+    properties based on property characteristics and rental prices.
+</p>
+
+
+<!-- =====================================================
+     K SELECTION METHOD
+===================================================== -->
+
+<div class="kmeans-control-card">
+
+    <div class="kmeans-control-header">
+
+        <div>
+
+            <h3>Select K Selection Method</h3>
+
+            <p>
+                Choose how the optimal number of clusters (K)
+                should be determined.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <form
+        method="POST"
+        action="{{ url_for('kmeans') }}"
+    >
+
+        <div class="kmeans-form-grid">
+
+
+            <!-- METHOD -->
+
+            <div class="form-group">
+
+                <label for="method">
+                    K Selection Method
+                </label>
+
+                <select
+                    id="method"
+                    name="method"
+                    onchange="changeMethod()"
+                >
+
+                    <option
+                        value="manual"
+                        {% if method == "manual" %}selected{% endif %}
+                    >
+                        Manual K
+                    </option>
+
+                    <option
+                        value="elbow"
+                        {% if method == "elbow" %}selected{% endif %}
+                    >
+                        Elbow Method
+                    </option>
+
+                    <option
+                        value="silhouette"
+                        {% if method == "silhouette" %}selected{% endif %}
+                    >
+                        Silhouette Method
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- MANUAL K -->
+
+            <div
+                class="form-group"
+                id="manual-k-group"
+            >
+
+                <label for="manual_k">
+                    Select K
+                </label>
+
+                <select
+                    id="manual_k"
+                    name="manual_k"
+                >
+
+                    {% for k in range(2, 11) %}
+
+                    <option
+                        value="{{ k }}"
+                        {% if manual_k == k %}selected{% endif %}
+                    >
+                        {{ k }} Clusters
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- MIN K -->
+
+            <div
+                class="form-group"
+                id="min-k-group"
+                style="display:none;"
+            >
+
+                <label for="min_k">
+                    Minimum K
+                </label>
+
+                <select
+                    id="min_k"
+                    name="min_k"
+                >
+
+                    {% for k in range(2, 10) %}
+
+                    <option
+                        value="{{ k }}"
+                        {% if min_k == k %}selected{% endif %}
+                    >
+                        {{ k }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- MAX K -->
+
+            <div
+                class="form-group"
+                id="max-k-group"
+                style="display:none;"
+            >
+
+                <label for="max_k">
+                    Maximum K
+                </label>
+
+                <select
+                    id="max_k"
+                    name="max_k"
+                >
+
+                    {% for k in range(3, 16) %}
+
+                    <option
+                        value="{{ k }}"
+                        {% if max_k == k %}selected{% endif %}
+                    >
+                        {{ k }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="kmeans-button"
+        >
+            Run K-Means
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- =====================================================
+     ERROR
+===================================================== -->
+
+{% if error %}
+
+<div class="error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<!-- =====================================================
+     RESULTS
+===================================================== -->
+
+{% if results %}
+
+<div class="kmeans-results">
+
+
+    <!-- HEADER -->
+
+    <div class="kmeans-result-header">
+
+        <div>
+
+            <h3>K-Means Results</h3>
+
+            <p>
+                Method used:
+                <strong>
+                    {{ results.method|title }}
+                </strong>
+            </p>
+
+        </div>
+
+        <div class="selected-k-badge">
+
+            Selected K:
+            <strong>
+                {{ results.selected_k }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- METRICS -->
+
+    <div class="kmeans-metrics">
+
+
+        <div class="kmeans-metric-card">
+
+            <span class="metric-title">
+                SELECTED K
+            </span>
+
+            <span class="metric-value">
+                {{ results.selected_k }}
+            </span>
+
+            <span class="metric-description">
+                Number of clusters
+            </span>
+
+        </div>
+
+
+        <div class="kmeans-metric-card">
+
+            <span class="metric-title">
+                WCSS / INERTIA
+            </span>
+
+            <span class="metric-value">
+                {{ results.inertia }}
+            </span>
+
+            <span class="metric-description">
+                Within-cluster variation
+            </span>
+
+        </div>
+
+
+        <div class="kmeans-metric-card">
+
+            <span class="metric-title">
+                SILHOUETTE SCORE
+            </span>
+
+            <span class="metric-value">
+                {{ results.silhouette_score }}
+            </span>
+
+            <span class="metric-description">
+                Cluster separation
+            </span>
+
+        </div>
+
+
+        <div class="kmeans-metric-card">
+
+            <span class="metric-title">
+                RECORDS
+            </span>
+
+            <span class="metric-value">
+                {{ results.total_records }}
+            </span>
+
+            <span class="metric-description">
+                Records clustered
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =================================================
+         SELECTION RESULT
+    ================================================= -->
+
+    {% if results.selection %}
+
+    <div class="kmeans-selection-box">
+
+        <h3>
+            K Selection Analysis
+        </h3>
+
+
+        {% if results.selection.type == "Manual K" %}
+
+        <p>
+            <strong>Manual Selection:</strong>
+            K = {{ results.selected_k }} was selected manually.
+        </p>
+
+
+        {% elif results.selection.type == "Elbow Method" %}
+
+        <p>
+            <strong>Elbow Method:</strong>
+            The analysis suggests
+            <strong>K = {{ results.selection.suggested_k }}</strong>
+            as the optimal number of clusters.
+        </p>
+
+        <div class="chart-card">
+
+            <h4>
+                Elbow Method - WCSS Analysis
+            </h4>
+
+            <img
+                src="{{ url_for('static', filename=results.selection.chart) }}"
+                alt="K-Means Elbow Method"
+            >
+
+        </div>
+
+
+        {% elif results.selection.type == "Silhouette Method" %}
+
+        <p>
+            <strong>Silhouette Method:</strong>
+            The highest silhouette score occurs at
+            <strong>K = {{ results.selection.suggested_k }}</strong>.
+        </p>
+
+        <div class="chart-card">
+
+            <h4>
+                Silhouette Score Analysis
+            </h4>
+
+            <img
+                src="{{ url_for('static', filename=results.selection.chart) }}"
+                alt="K-Means Silhouette Method"
+            >
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- =================================================
+         CLUSTER SIZES
+    ================================================= -->
+
+    <div class="kmeans-section">
+
+        <h3>
+            Cluster Distribution
+        </h3>
+
+        <div class="cluster-grid">
+
+            {% for cluster, size in results.cluster_sizes.items() %}
+
+            <div class="cluster-card">
+
+                <div class="cluster-number">
+                    Cluster {{ cluster }}
+                </div>
+
+                <div class="cluster-size">
+                    {{ size }}
+                </div>
+
+                <div class="cluster-label">
+                    Properties
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         CLUSTER VISUALIZATION
+    ================================================= -->
+
+    <div class="kmeans-section">
+
+        <h3>
+            Cluster Visualization
+        </h3>
+
+        <div class="chart-card">
+
+            <h4>
+                Rental Price vs Square Feet
+            </h4>
+
+            <img
+                src="{{ url_for('static', filename=results.cluster_chart) }}"
+                alt="K-Means Cluster Visualization"
+            >
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         FEATURES
+    ================================================= -->
+
+    <div class="info-box">
+
+        <strong>
+            Features Used for Clustering
+        </strong>
+
+        <ul>
+
+            {% for feature in results.features %}
+
+            <li>
+                {{ feature }}
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+
+</div>
+
+{% endif %}
+
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+
+function changeMethod() {
+
+    const method =
+        document.getElementById("method").value;
+
+    const manualGroup =
+        document.getElementById("manual-k-group");
+
+    const minGroup =
+        document.getElementById("min-k-group");
+
+    const maxGroup =
+        document.getElementById("max-k-group");
+
+
+    if (method === "manual") {
+
+        manualGroup.style.display = "block";
+
+        minGroup.style.display = "none";
+
+        maxGroup.style.display = "none";
+
+    }
+
+    else {
+
+        manualGroup.style.display = "none";
+
+        minGroup.style.display = "block";
+
+        maxGroup.style.display = "block";
+
+    }
+
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    changeMethod
+);
+
+</script>
+
+{% endblock %}
