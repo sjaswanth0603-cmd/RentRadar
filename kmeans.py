@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
 
@@ -46,14 +46,30 @@ CLUSTER_FEATURES = [
 
 
 # =========================================================
+# PERFORMANCE SETTINGS
+# =========================================================
+
+# Only this many rows are used when finding the best K.
+# This prevents Elbow/Silhouette from becoming extremely slow.
+EVALUATION_SAMPLE_SIZE = 5000
+
+RANDOM_STATE = 42
+
+
+# =========================================================
 # PREPARE DATA
 # =========================================================
 
 def prepare_clustering_data():
 
+    print("Loading rental dataset...")
+
     data = load_data().copy()
 
+    print(f"Dataset loaded: {len(data):,} rows")
+
     if "_dataset_source" in data.columns:
+
         data = data.drop(
             columns=["_dataset_source"]
         )
@@ -65,6 +81,7 @@ def prepare_clustering_data():
     ]
 
     if len(available_features) < 2:
+
         raise ValueError(
             "Not enough numerical features available "
             "for K-Means clustering."
@@ -74,6 +91,7 @@ def prepare_clustering_data():
         available_features
     ].copy()
 
+    # Convert everything to numeric
     for col in available_features:
 
         X[col] = pd.to_numeric(
@@ -81,6 +99,7 @@ def prepare_clustering_data():
             errors="coerce"
         )
 
+    # Remove invalid values
     X = X.replace(
         [np.inf, -np.inf],
         np.nan
@@ -89,11 +108,17 @@ def prepare_clustering_data():
     X = X.dropna()
 
     if len(X) < 20:
+
         raise ValueError(
             "Not enough valid records available "
             "for K-Means clustering."
         )
 
+    print(
+        f"Valid clustering records: {len(X):,}"
+    )
+
+    # Standardization
     scaler = StandardScaler()
 
     X_scaled = scaler.fit_transform(X)
@@ -107,59 +132,65 @@ def prepare_clustering_data():
 
 
 # =========================================================
-# MANUAL K
+# CREATE EVALUATION SAMPLE
 # =========================================================
 
-def run_manual_k(
+def create_evaluation_sample(X_scaled):
+
+    sample_size = min(
+        EVALUATION_SAMPLE_SIZE,
+        len(X_scaled)
+    )
+
+    rng = np.random.RandomState(
+        RANDOM_STATE
+    )
+
+    indices = rng.choice(
+        len(X_scaled),
+        size=sample_size,
+        replace=False
+    )
+
+    sample = X_scaled[indices]
+
+    print(
+        f"Using {sample_size:,} rows for "
+        f"K-selection evaluation."
+    )
+
+    return sample
+
+
+# =========================================================
+# TRAIN FINAL MODEL
+# =========================================================
+
+def train_final_kmeans(
     X_scaled,
-    original_data,
-    features,
     k
 ):
 
-    model = KMeans(
+    print(
+        f"Training final MiniBatchKMeans "
+        f"with K={k}..."
+    )
+
+    model = MiniBatchKMeans(
         n_clusters=k,
-        random_state=42,
-        n_init=10
+        random_state=RANDOM_STATE,
+        batch_size=2048,
+        n_init=5,
+        max_iter=100
     )
 
     labels = model.fit_predict(
         X_scaled
     )
 
-    silhouette = silhouette_score(
-        X_scaled,
-        labels
-    )
+    print("Final clustering completed.")
 
-    result_data = original_data.copy()
-
-    result_data["cluster"] = labels
-
-    cluster_sizes = (
-        result_data["cluster"]
-        .value_counts()
-        .sort_index()
-        .to_dict()
-    )
-
-    return {
-        "method": "Manual K",
-        "selected_k": k,
-        "inertia": round(
-            float(model.inertia_),
-            2
-        ),
-        "silhouette_score": round(
-            float(silhouette),
-            4
-        ),
-        "cluster_sizes": cluster_sizes,
-        "features": features,
-        "labels": labels,
-        "centers": model.cluster_centers_,
-        "data": result_data
-    }
+    return model, labels
 
 
 # =========================================================
@@ -167,10 +198,14 @@ def run_manual_k(
 # =========================================================
 
 def calculate_elbow(
-    X_scaled,
+    X_sample,
     min_k,
     max_k
 ):
+
+    print(
+        "\nRunning Elbow Method..."
+    )
 
     k_values = list(
         range(
@@ -183,19 +218,28 @@ def calculate_elbow(
 
     for k in k_values:
 
-        model = KMeans(
-            n_clusters=k,
-            random_state=42,
-            n_init=10
+        print(
+            f"  Testing K={k}..."
         )
 
-        model.fit(X_scaled)
+        model = MiniBatchKMeans(
+            n_clusters=k,
+            random_state=RANDOM_STATE,
+            batch_size=2048,
+            n_init=3,
+            max_iter=80
+        )
+
+        model.fit(X_sample)
 
         inertias.append(
             float(model.inertia_)
         )
 
-    # Simple automatic elbow calculation
+    # -----------------------------------------------------
+    # AUTOMATIC ELBOW CALCULATION
+    # -----------------------------------------------------
+
     points = np.column_stack(
         (
             k_values,
@@ -222,11 +266,15 @@ def calculate_elbow(
             + (last[0] - first[0]) ** 2
         )
 
-        distance = (
-            numerator / denominator
-            if denominator != 0
-            else 0
-        )
+        if denominator != 0:
+
+            distance = (
+                numerator / denominator
+            )
+
+        else:
+
+            distance = 0
 
         distances.append(
             distance
@@ -239,6 +287,10 @@ def calculate_elbow(
     suggested_k = k_values[
         best_index
     ]
+
+    # -----------------------------------------------------
+    # CREATE CHART
+    # -----------------------------------------------------
 
     chart_path = os.path.join(
         CHART_DIR,
@@ -292,6 +344,10 @@ def calculate_elbow(
 
     plt.close()
 
+    print(
+        f"Elbow Method suggests K={suggested_k}"
+    )
+
     return {
         "k_values": k_values,
         "inertias": inertias,
@@ -305,10 +361,14 @@ def calculate_elbow(
 # =========================================================
 
 def calculate_silhouette(
-    X_scaled,
+    X_sample,
     min_k,
     max_k
 ):
+
+    print(
+        "\nRunning Silhouette Method..."
+    )
 
     k_values = list(
         range(
@@ -321,18 +381,26 @@ def calculate_silhouette(
 
     for k in k_values:
 
-        model = KMeans(
+        print(
+            f"  Testing K={k}..."
+        )
+
+        model = MiniBatchKMeans(
             n_clusters=k,
-            random_state=42,
-            n_init=10
+            random_state=RANDOM_STATE,
+            batch_size=2048,
+            n_init=3,
+            max_iter=80
         )
 
         labels = model.fit_predict(
-            X_scaled
+            X_sample
         )
 
+        # silhouette is calculated ONLY
+        # on the 5000-row sample
         score = silhouette_score(
-            X_scaled,
+            X_sample,
             labels
         )
 
@@ -347,6 +415,10 @@ def calculate_silhouette(
     suggested_k = k_values[
         best_index
     ]
+
+    # -----------------------------------------------------
+    # CREATE CHART
+    # -----------------------------------------------------
 
     chart_path = os.path.join(
         CHART_DIR,
@@ -400,6 +472,10 @@ def calculate_silhouette(
 
     plt.close()
 
+    print(
+        f"Silhouette Method suggests K={suggested_k}"
+    )
+
     return {
         "k_values": k_values,
         "scores": scores,
@@ -423,16 +499,46 @@ def create_cluster_chart(
         "kmeans_clusters.png"
     )
 
+    print(
+        "Creating cluster visualization..."
+    )
+
+    # Plot a sample rather than all 100k points.
+    # This makes chart generation much faster.
+    plot_size = min(
+        10000,
+        len(data)
+    )
+
+    rng = np.random.RandomState(
+        RANDOM_STATE
+    )
+
+    indices = rng.choice(
+        len(data),
+        size=plot_size,
+        replace=False
+    )
+
+    plot_data = data.iloc[
+        indices
+    ]
+
+    plot_labels = np.asarray(
+        labels
+    )[indices]
+
     plt.figure(
         figsize=(10, 6)
     )
 
     scatter = plt.scatter(
-        data["square_feet"],
-        data["price"],
-        c=labels,
+        plot_data["square_feet"],
+        plot_data["price"],
+        c=plot_labels,
         cmap="viridis",
-        alpha=0.6
+        alpha=0.6,
+        s=12
     )
 
     plt.xlabel(
@@ -465,6 +571,10 @@ def create_cluster_chart(
 
     plt.close()
 
+    print(
+        "Cluster visualization created."
+    )
+
     return "charts/kmeans_clusters.png"
 
 
@@ -479,12 +589,50 @@ def run_kmeans(
     max_k=10
 ):
 
+    print(
+        "\n=========================================="
+    )
+
+    print(
+        "        K-MEANS CLUSTERING"
+    )
+
+    print(
+        "=========================================="
+    )
+
+    # -----------------------------------------------------
+    # PREPARE DATA
+    # -----------------------------------------------------
+
     (
         original_data,
         X,
         X_scaled,
         features
     ) = prepare_clustering_data()
+
+    # -----------------------------------------------------
+    # LIMIT K RANGE
+    # -----------------------------------------------------
+
+    min_k = max(
+        2,
+        int(min_k)
+    )
+
+    max_k = min(
+        15,
+        int(max_k)
+    )
+
+    if max_k <= min_k:
+
+        max_k = min_k + 1
+
+    # -----------------------------------------------------
+    # SELECT K
+    # -----------------------------------------------------
 
     results = {
         "method": method,
@@ -504,12 +652,22 @@ def run_kmeans(
 
     if method == "manual":
 
-        selected_k = manual_k
+        selected_k = int(
+            manual_k
+        )
+
+        selected_k = max(
+            2,
+            min(selected_k, 15)
+        )
 
         results["selection"] = {
+
             "type": "Manual K",
+
             "message": (
-                f"K = {selected_k} was selected manually."
+                f"K = {selected_k} "
+                "was selected manually."
             )
         }
 
@@ -519,8 +677,12 @@ def run_kmeans(
 
     elif method == "elbow":
 
+        X_sample = create_evaluation_sample(
+            X_scaled
+        )
+
         elbow = calculate_elbow(
-            X_scaled,
+            X_sample,
             min_k,
             max_k
         )
@@ -530,10 +692,15 @@ def run_kmeans(
         ]
 
         results["selection"] = {
+
             "type": "Elbow Method",
+
             "suggested_k": selected_k,
+
             "chart": elbow["chart"],
+
             "k_values": elbow["k_values"],
+
             "inertias": elbow["inertias"]
         }
 
@@ -543,8 +710,12 @@ def run_kmeans(
 
     elif method == "silhouette":
 
+        X_sample = create_evaluation_sample(
+            X_scaled
+        )
+
         silhouette = calculate_silhouette(
-            X_scaled,
+            X_sample,
             min_k,
             max_k
         )
@@ -554,10 +725,15 @@ def run_kmeans(
         ]
 
         results["selection"] = {
+
             "type": "Silhouette Method",
+
             "suggested_k": selected_k,
+
             "chart": silhouette["chart"],
+
             "k_values": silhouette["k_values"],
+
             "scores": silhouette["scores"]
         }
 
@@ -568,29 +744,127 @@ def run_kmeans(
         )
 
     # -----------------------------------------------------
-    # FINAL K-MEANS MODEL
+    # FINAL MODEL
     # -----------------------------------------------------
 
-    clustering = run_manual_k(
-        X_scaled=X_scaled,
-        original_data=original_data,
-        features=features,
-        k=selected_k
-    )
-
-    cluster_chart = create_cluster_chart(
-        original_data,
-        clustering["labels"],
+    model, labels = train_final_kmeans(
+        X_scaled,
         selected_k
     )
 
+    # -----------------------------------------------------
+    # SILHOUETTE OF FINAL MODEL
+    # -----------------------------------------------------
+
+    # Calculate this on a sample too.
+    # Calculating silhouette on 100k records is expensive.
+
+    evaluation_sample_size = min(
+        5000,
+        len(X_scaled)
+    )
+
+    rng = np.random.RandomState(
+        RANDOM_STATE
+    )
+
+    sample_indices = rng.choice(
+        len(X_scaled),
+        size=evaluation_sample_size,
+        replace=False
+    )
+
+    sample_X = X_scaled[
+        sample_indices
+    ]
+
+    sample_labels = np.asarray(
+        labels
+    )[sample_indices]
+
+    final_silhouette = silhouette_score(
+        sample_X,
+        sample_labels
+    )
+
+    # -----------------------------------------------------
+    # CLUSTER SIZES
+    # -----------------------------------------------------
+
+    cluster_sizes = {}
+
+    unique_clusters, counts = np.unique(
+        labels,
+        return_counts=True
+    )
+
+    for cluster, count in zip(
+        unique_clusters,
+        counts
+    ):
+
+        cluster_sizes[
+            int(cluster)
+        ] = int(count)
+
+    # -----------------------------------------------------
+    # CLUSTER CHART
+    # -----------------------------------------------------
+
+    cluster_chart = create_cluster_chart(
+        original_data,
+        labels,
+        selected_k
+    )
+
+    # -----------------------------------------------------
+    # FINAL RESULTS
+    # -----------------------------------------------------
+
     results.update({
-        "selected_k": clustering["selected_k"],
-        "inertia": clustering["inertia"],
-        "silhouette_score": clustering["silhouette_score"],
-        "cluster_sizes": clustering["cluster_sizes"],
+
+        "selected_k": int(
+            selected_k
+        ),
+
+        "inertia": round(
+            float(model.inertia_),
+            2
+        ),
+
+        "silhouette_score": round(
+            float(final_silhouette),
+            4
+        ),
+
+        "cluster_sizes": cluster_sizes,
+
         "cluster_chart": cluster_chart
     })
+
+    print(
+        "\n=========================================="
+    )
+
+    print(
+        "K-MEANS COMPLETED"
+    )
+
+    print(
+        f"Selected K: {selected_k}"
+    )
+
+    print(
+        f"Inertia: {model.inertia_:.2f}"
+    )
+
+    print(
+        f"Silhouette: {final_silhouette:.4f}"
+    )
+
+    print(
+        "==========================================\n"
+    )
 
     return results
 
@@ -607,7 +881,9 @@ if __name__ == "__main__":
         max_k=10
     )
 
-    print("\n========== K-MEANS TEST ==========")
+    print(
+        "\n========== K-MEANS TEST =========="
+    )
 
     print(
         "Method:",
