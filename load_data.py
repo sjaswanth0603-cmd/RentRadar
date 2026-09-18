@@ -15,7 +15,8 @@ DATA_FILES = [
     os.path.join(DATA_DIR, "apartments_for_rent_classified_100K.xlsx"),
 ]
 
-CACHE_FILE = os.path.join(DATA_DIR, ".cache_dedup.pkl")
+CACHE_FILE_DEDUP = os.path.join(DATA_DIR, ".cache_dedup.pkl")
+CACHE_FILE_RAW = os.path.join(DATA_DIR, ".cache_raw.pkl")
 
 
 # =========================================================
@@ -27,9 +28,11 @@ def load_data(force_reload: bool = False, deduplicate: bool = True) -> pd.DataFr
     Load apartment datasets with high-speed local caching.
     Deduplicates on primary key 'id' to prevent duplicate bias.
     """
-    if not force_reload and os.path.exists(CACHE_FILE):
+    cache_file = CACHE_FILE_DEDUP if deduplicate else CACHE_FILE_RAW
+
+    if not force_reload and os.path.exists(cache_file):
         try:
-            with open(CACHE_FILE, "rb") as f:
+            with open(cache_file, "rb") as f:
                 df = pickle.load(f)
             return df
         except Exception:
@@ -52,7 +55,7 @@ def load_data(force_reload: bool = False, deduplicate: bool = True) -> pd.DataFr
 
     # Save to binary pickle cache for fast subsequent reads
     try:
-        with open(CACHE_FILE, "wb") as f:
+        with open(cache_file, "wb") as f:
             pickle.dump(combined_df, f, protocol=pickle.HIGHEST_PROTOCOL)
     except Exception as e:
         print(f"Warning: could not write cache file: {e}")

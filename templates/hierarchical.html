@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}
+RentRadar - Hierarchical Clustering
+{% endblock %}
+
+
+{% block content %}
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<h2>Hierarchical Clustering</h2>
+
+<p class="page-description">
+    Group similar rental properties using agglomerative hierarchical clustering. The tree hierarchy is constructed first, and optimal K is derived from dendrogram gap analysis.
+</p>
+
+
+<!-- =====================================================
+     PARAMETERS CARD
+===================================================== -->
+
+<div class="kmeans-control-card" style="background: var(--surface, #ffffff); border-radius: 12px; padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+
+    <div class="kmeans-control-header" style="margin-bottom: 18px;">
+
+        <h3 style="margin: 0; font-size: 1.1rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--navy-950);">
+            PARAMETERS
+        </h3>
+
+    </div>
+
+
+    <form
+        method="POST"
+        action="{{ url_for('hierarchical_clustering') }}"
+    >
+
+        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+
+
+            <!-- K / CUT THRESHOLD -->
+
+            <div class="form-group" style="flex: 1.5; min-width: 220px;">
+
+                <label for="n_clusters" style="font-weight: 600; display: block; margin-bottom: 6px;">
+                    K:
+                </label>
+
+                <select
+                    id="n_clusters"
+                    name="n_clusters"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border, #e3e9ee);"
+                >
+
+                    <option
+                        value="auto"
+                        {% if n_clusters == 'auto' or (results and results.is_auto) %}selected{% endif %}
+                    >
+                        Auto-Derived (Dendrogram Gap Analysis)
+                    </option>
+
+                    {% for k in range(2, 11) %}
+
+                    <option
+                        value="{{ k }}"
+                        {% if n_clusters != 'auto' and n_clusters == k %}selected{% endif %}
+                    >
+                        {{ k }} Clusters (Manual Cut)
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- LINKAGE -->
+
+            <div class="form-group" style="flex: 1; min-width: 160px;">
+
+                <label for="linkage" style="font-weight: 600; display: block; margin-bottom: 6px;">
+                    Linkage:
+                </label>
+
+                <select
+                    id="linkage"
+                    name="linkage"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border, #e3e9ee);"
+                >
+
+                    <option
+                        value="ward"
+                        {% if linkage == "ward" %}selected{% endif %}
+                    >
+                        Ward
+                    </option>
+
+                    <option
+                        value="complete"
+                        {% if linkage == "complete" %}selected{% endif %}
+                    >
+                        Complete
+                    </option>
+
+                    <option
+                        value="average"
+                        {% if linkage == "average" %}selected{% endif %}
+                    >
+                        Average
+                    </option>
+
+                    <option
+                        value="single"
+                        {% if linkage == "single" %}selected{% endif %}
+                    >
+                        Single
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- DISTANCE (EUCLIDEAN ONLY) -->
+
+            <div class="form-group" style="flex: 1; min-width: 160px;">
+
+                <label style="font-weight: 600; display: block; margin-bottom: 6px;">
+                    Distance:
+                </label>
+
+                <div style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border, #e3e9ee); background: var(--surface-soft, #f8fafb); font-weight: 600; color: var(--navy-950, #0b1728);">
+                    Euclidean
+                </div>
+
+                <input type="hidden" name="metric" value="euclidean">
+
+            </div>
+
+        </div>
+
+
+        <div style="text-align: center;">
+
+            <button
+                type="submit"
+                class="kmeans-button"
+                style="width: auto; padding: 12px 32px; font-size: 1rem; cursor: pointer;"
+            >
+                Run Hierarchical Clustering
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =====================================================
+     ERROR DISPLAY
+===================================================== -->
+
+{% if error %}
+
+<div class="error" style="background: var(--red-100, #fde9e9); color: var(--red-600, #c44545); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<!-- =====================================================
+     RESULTS DISPLAY
+===================================================== -->
+
+{% if results %}
+
+<!-- HIERARCHY DERIVED K ANNOUNCEMENT BADGE -->
+
+<div style="padding: 14px 18px; background: rgba(24, 166, 168, 0.1); border-left: 4px solid var(--teal-500, #18a6a8); border-radius: 8px; margin-bottom: 24px; font-size: 0.95rem;">
+
+    <strong style="color: var(--navy-950, #0b1728);">Dendrogram Analysis Result:</strong>
+
+    <span style="color: var(--text, #17212b); margin-left: 6px;">
+        Complete dendrogram hierarchy constructed first using Euclidean distance.
+        <strong>Derived Optimal K = {{ results.derived_k }}</strong> based on the maximum vertical distance gap (Δh = {{ results.max_gap }}) in the dendrogram tree.
+        {% if results.is_auto %}
+        <span style="background: var(--teal-600, #0f8b8d); color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-left: 6px;">
+            Auto-Derived Active
+        </span>
+        {% else %}
+        <span style="background: var(--navy-800, #163554); color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-left: 6px;">
+            Manual Cut (K={{ results.n_clusters }})
+        </span>
+        {% endif %}
+    </span>
+
+</div>
+
+
+<!-- 3 KPI CARDS GRID -->
+
+<div class="kmeans-metrics" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 24px;">
+
+    <div class="kmeans-metric-card" style="text-align: center; padding: 18px;">
+
+        <span class="metric-title" style="display: block; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted, #687786); margin-bottom: 6px;">
+            Clusters
+        </span>
+
+        <span class="metric-value" style="font-size: 2rem; font-weight: 700; color: var(--navy-950, #0b1728);">
+            {{ results.n_clusters }}
+        </span>
+
+    </div>
+
+
+    <div class="kmeans-metric-card" style="text-align: center; padding: 18px;">
+
+        <span class="metric-title" style="display: block; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted, #687786); margin-bottom: 6px;">
+            Listings
+        </span>
+
+        <span class="metric-value" style="font-size: 2rem; font-weight: 700; color: var(--navy-950, #0b1728);">
+            {{ "{:,}".format(results.sampled_records) }}
+        </span>
+
+    </div>
+
+
+    <div class="kmeans-metric-card" style="text-align: center; padding: 18px;">
+
+        <span class="metric-title" style="display: block; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted, #687786); margin-bottom: 6px;">
+            Silhouette
+        </span>
+
+        <span class="metric-value" style="font-size: 2rem; font-weight: 700; color: var(--teal-600, #0f8b8d);">
+            {{ results.silhouette_score }}
+        </span>
+
+    </div>
+
+</div>
+
+
+<!-- DENDROGRAM -->
+
+<div class="kmeans-section" style="background: var(--surface, #ffffff); border-radius: 12px; padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+
+    <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--navy-950);">
+        DENDROGRAM
+    </h3>
+
+    <div class="chart-card">
+
+        <img
+            src="{{ url_for('static', filename=results.dendrogram_chart) }}"
+            alt="Dendrogram"
+            style="width: 100%; border-radius: 8px;"
+        >
+
+    </div>
+
+    <!-- LEVEL HEIGHTS BREAKDOWN -->
+    {% if results.level_heights %}
+    <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border, #e3e9ee);">
+
+        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--navy-800, #163554);">
+            Merge Heights at Each Clustering Level (K = 2 to 10)
+        </h4>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px;">
+
+            {% for item in results.level_heights %}
+
+            <div style="padding: 8px 14px; border-radius: 8px; font-size: 0.9rem; border: 1px solid {% if item.is_current %}var(--teal-500, #18a6a8){% else %}var(--border, #e3e9ee){% endif %}; background: {% if item.is_current %}rgba(24, 166, 168, 0.15){% else %}var(--surface-soft, #f8fafb){% endif %};">
+
+                <span style="font-weight: 700; color: {% if item.is_current %}var(--teal-600, #0f8b8d){% else %}var(--navy-950, #0b1728){% endif %};">
+                    K = {{ item.k }}
+                </span>
+
+                <span style="margin-left: 6px; color: var(--muted, #687786);">
+                    Height: <strong style="color: var(--text, #17212b);">{{ item.height }}</strong>
+                </span>
+
+                {% if item.k == results.derived_k %}
+                <span style="margin-left: 6px; font-size: 0.75rem; background: var(--teal-600, #0f8b8d); color: #ffffff; padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+                    Derived Optimal K
+                </span>
+                {% endif %}
+
+                {% if item.is_current and item.k != results.derived_k %}
+                <span style="margin-left: 6px; font-size: 0.75rem; background: var(--navy-800, #163554); color: #ffffff; padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+                    Active Cut
+                </span>
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- CLUSTER DISTRIBUTION -->
+
+<div class="kmeans-section" style="background: var(--surface, #ffffff); border-radius: 12px; padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+
+    <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 1.1rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--navy-950);">
+        CLUSTER DISTRIBUTION
+    </h3>
+
+    <div style="overflow-x: auto;">
+
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+
+            <thead>
+
+                <tr style="background: var(--surface-soft, #f8fafb); border-bottom: 2px solid var(--border, #e3e9ee);">
+
+                    <th style="padding: 12px 16px; font-weight: 700; color: var(--navy-950);">
+                        Cluster
+                    </th>
+
+                    <th style="padding: 12px 16px; font-weight: 700; color: var(--navy-950);">
+                        Listings
+                    </th>
+
+                    <th style="padding: 12px 16px; font-weight: 700; color: var(--navy-950);">
+                        Average Price
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for item in results.cluster_summaries %}
+
+                <tr style="border-bottom: 1px solid var(--border, #e3e9ee);">
+
+                    <td style="padding: 12px 16px; font-weight: 600;">
+                        {{ item.cluster }}
+                    </td>
+
+                    <td style="padding: 12px 16px;">
+                        {{ "{:,}".format(item.count) }}
+                    </td>
+
+                    <td style="padding: 12px 16px; font-weight: 600; color: var(--green-600, #16835f);">
+                        ${{ "{:,.2f}".format(item.avg_price) }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- CLUSTER VISUALIZATION -->
+
+<div class="kmeans-section" style="background: var(--surface, #ffffff); border-radius: 12px; padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+
+    <h3 style="margin-top: 0; margin-bottom: 4px; font-size: 1.1rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--navy-950);">
+        CLUSTER VISUALIZATION
+    </h3>
+
+    <p style="color: var(--muted, #687786); font-size: 0.95rem; margin-top: 0; margin-bottom: 16px;">
+        Price vs Square Feet
+    </p>
+
+    <div class="chart-card">
+
+        <img
+            src="{{ url_for('static', filename=results.cluster_chart) }}"
+            alt="Cluster Scatter Plot"
+            style="width: 100%; border-radius: 8px;"
+        >
+
+    </div>
+
+</div>
+
+
+<!-- FEATURES -->
+
+<div class="info-box" style="padding: 14px 20px; background: rgba(24, 166, 168, 0.08); border-left: 4px solid var(--teal-500, #18a6a8); border-radius: 8px;">
+
+    <strong style="color: var(--navy-950, #0b1728);">Features:</strong>
+
+    <span style="color: var(--text, #17212b); margin-left: 8px;">
+        Price • Bedrooms • Bathrooms • Square Feet • Latitude • Longitude
+    </span>
+
+</div>
+
+{% endif %}
+
+
+{% endblock %}

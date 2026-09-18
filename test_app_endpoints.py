@@ -15,6 +15,8 @@ def test_all_routes():
         ("/linear-regression", 200),
         ("/logistic-regression", 200),
         ("/decision-trees", 200),
+        ("/kmeans", 200),
+        ("/hierarchical-clustering", 200),
         ("/predictor", 200),
     ]
 
@@ -74,9 +76,35 @@ def test_all_routes():
         if not passed:
             all_passed = False
 
-    print(f"\nInference speed: {pred_latency:.2f}ms")
+    # Test POST Hierarchical Clustering
+    print("\n--- Testing Hierarchical Clustering POST Submission ---")
+    hier_payload = {
+        "n_clusters": "4",
+        "linkage": "complete",
+        "metric": "cityblock"
+    }
+    t0 = time.time()
+    res_hier = client.post("/hierarchical-clustering", data=hier_payload)
+    hier_latency = (time.time() - t0) * 1000
+    html_hier = res_hier.data.decode("utf-8")
+
+    hier_checks = [
+        ("HTTP 200 Response on POST", res_hier.status_code == 200),
+        ("Contains 'PARAMETERS'", "PARAMETERS" in html_hier),
+        ("Contains 'CLUSTER DISTRIBUTION'", "CLUSTER DISTRIBUTION" in html_hier),
+        ("Contains Selected K=4", "4" in html_hier),
+    ]
+
+    for label, passed in hier_checks:
+        icon = "[PASS]" if passed else "[FAIL]"
+        print(f"{icon} {label}")
+        if not passed:
+            all_passed = False
+
+    print(f"Hierarchical Clustering POST latency: {hier_latency:.2f}ms")
+
     if all_passed:
-        print("\n*** ALL 17 END-TO-END VALIDATION CHECKS PASSED SUCCESSFULLY! ***\n")
+        print("\n*** ALL END-TO-END VALIDATION CHECKS PASSED SUCCESSFULLY! ***\n")
     else:
         print("\n*** SOME CHECKS FAILED. PLEASE REVIEW LOGS. ***\n")
 

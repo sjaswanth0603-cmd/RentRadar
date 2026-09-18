@@ -10,6 +10,7 @@ from logistic_regression import run_logistic_regression
 from decision_trees import run_decision_trees
 from model_manager import manager
 from kmeans import run_kmeans
+from hierarchical_clustering import run_hierarchical_clustering
 
 
 app = Flask(__name__)
@@ -260,6 +261,49 @@ def kmeans():
 
 
 # =========================================================
+# 7B. HIERARCHICAL CLUSTERING
+# =========================================================
+
+@app.route("/hierarchical-clustering", methods=["GET", "POST"])
+@app.route("/hierarchical_clustering", methods=["GET", "POST"])
+@app.route("/hierarchical", methods=["GET", "POST"])
+def hierarchical_clustering():
+
+    error = None
+    results = None
+
+    linkage = request.form.get("linkage", "ward") or "ward"
+    raw_n_clusters = request.form.get("n_clusters", "auto")
+
+    if not raw_n_clusters or str(raw_n_clusters).lower() == "auto":
+        n_clusters = "auto"
+    else:
+        try:
+            n_clusters = int(raw_n_clusters)
+        except (ValueError, TypeError):
+            n_clusters = "auto"
+
+    try:
+        results = run_hierarchical_clustering(
+            n_clusters=n_clusters,
+            linkage_method=linkage,
+            metric="euclidean"
+        )
+    except Exception as e:
+        error = f"Error running Hierarchical Clustering: {e}"
+
+    return render_template(
+        "hierarchical.html",
+        active="hierarchical",
+        results=results,
+        error=error,
+        n_clusters=n_clusters,
+        linkage=linkage,
+        metric="euclidean"
+    )
+
+
+# =========================================================
 # 8. RENT PREDICTOR
 # =========================================================
 
@@ -406,5 +450,5 @@ if __name__ == "__main__":
     app.run(
         host="127.0.0.1",
         port=port,
-        debug=False
+        debug=True
     )

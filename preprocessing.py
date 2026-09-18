@@ -83,12 +83,13 @@ def extract_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
     df["desc_length"] = df["body"].fillna("").astype(str).str.len().clip(upper=2000)
 
     # 3. Structural ratios (safe division with small epsilon)
-    beds = pd.to_numeric(df["bedrooms"], errors="coerce").fillna(1.0).clip(lower=0)
-    baths = pd.to_numeric(df["bathrooms"], errors="coerce").fillna(1.0).clip(lower=0.5)
-    sqft = pd.to_numeric(df["square_feet"], errors="coerce").fillna(850.0).clip(lower=150)
+    # Use temporary filled series for ratio computation to preserve original NaNs in primary columns
+    beds_temp = pd.to_numeric(df["bedrooms"], errors="coerce").fillna(1.0).clip(lower=0)
+    baths_temp = pd.to_numeric(df["bathrooms"], errors="coerce").fillna(1.0).clip(lower=0.5)
+    sqft_temp = pd.to_numeric(df["square_feet"], errors="coerce").fillna(850.0).clip(lower=150)
 
-    df["bed_bath_ratio"] = (beds / (baths + 0.1)).round(2)
-    df["sqft_per_bed"] = (sqft / (beds + 0.5)).round(1)
+    df["bed_bath_ratio"] = (beds_temp / (baths_temp + 0.1)).round(2)
+    df["sqft_per_bed"] = (sqft_temp / (beds_temp + 0.5)).round(1)
 
     return df
 
@@ -111,7 +112,11 @@ def preprocess_data(force_reload: bool = False) -> Tuple[Any, Any, pd.Series, pd
     """
     global _CACHED_PREPROCESSED, _CACHED_SUMMARY
 
-    if _CACHED_PREPROCESSED is not None and not force_reload:
+    if force_reload:
+        _CACHED_PREPROCESSED = None
+        _CACHED_SUMMARY = None
+
+    if _CACHED_PREPROCESSED is not None:
         return _CACHED_PREPROCESSED
 
     print("\n========== PREPROCESSING STARTED ==========")
@@ -121,8 +126,12 @@ def preprocess_data(force_reload: bool = False) -> Tuple[Any, Any, pd.Series, pd
     if "_dataset_source" in data.columns:
         data = data.drop(columns=["_dataset_source"])
 
-    dup_before = int(data.duplicated().sum())
-    data = data.drop_duplicates().copy()
+    # Exclude raw text, IDs, and leakage fields before duplicate check so 'id' does not mask real duplicates
+    cols_to_drop = [c for c in EXCLUDED_COLUMNS_RATIONALE.keys() if c in data.columns]
+    data_for_dedup = data.drop(columns=cols_to_drop)
+
+    dup_before = int(data_for_dedup.duplicated().sum())
+    data = data.loc[~data_for_dedup.duplicated()].copy()
 
     # Target column validation
     target = "price"
@@ -135,17 +144,16 @@ def preprocess_data(force_reload: bool = False) -> Tuple[Any, Any, pd.Series, pd
         if col in data.columns:
             data[col] = pd.to_numeric(data[col], errors="coerce")
 
-    # Target cleaning
+    # Target cleaning & outlier filtering ($100 <= price <= $15,000)
     missing_target = int(data[target].isna().sum())
-    invalid_target = int((data[target] <= 0).sum())
-    data = data[data[target].notna() & (data[target] > 0)].copy()
+    invalid_target = int(((data[target] < 100) | (data[target] > 15000)).sum())
+    data = data[data[target].notna() & (data[target] >= 100) & (data[target] <= 15000)].copy()
 
     # Feature Engineering across all available fields
     print("Extracting all engineered features & amenities...")
     data = extract_engineered_features(data)
 
     # Exclude raw text, IDs, and leakage fields
-    cols_to_drop = [c for c in EXCLUDED_COLUMNS_RATIONALE.keys() if c in data.columns]
     data = data.drop(columns=cols_to_drop)
 
     # Separate X and y
@@ -263,7 +271,10 @@ def preprocess_classification_data(
     """
     global _CACHED_CLASSIFICATION
 
-    if _CACHED_CLASSIFICATION is not None and not force_reload:
+    if force_reload:
+        _CACHED_CLASSIFICATION = None
+
+    if _CACHED_CLASSIFICATION is not None:
         return _CACHED_CLASSIFICATION
 
     data = load_data().copy()
@@ -271,7 +282,7 @@ def preprocess_classification_data(
         data = data.drop(columns=["_dataset_source"])
 
     data["price"] = pd.to_numeric(data["price"], errors="coerce")
-    data = data[data["price"].notna() & (data["price"] > 0)].copy()
+    data = data[data["price"].notna() & (data["price"] >= 100) & (data["price"] <= 15000)].copy()
 
     # Extract all features
     data = extract_engineered_features(data)
