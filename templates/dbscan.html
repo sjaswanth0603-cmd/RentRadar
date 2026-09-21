@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}
+RentRadar - DBSCAN Clustering
+{% endblock %}
+
+
+{% block content %}
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<h2>DBSCAN Clustering</h2>
+
+<p class="page-description">
+    Density-Based Spatial Clustering of Applications with Noise (DBSCAN). Identifies dense core clusters of rental properties, classifies boundary border points, and filters out noise outliers using automated K-distance Knee locator curve analysis.
+</p>
+
+
+<!-- =====================================================
+     PARAMETERS CARD
+===================================================== -->
+
+<div class="kmeans-control-card" style="background: var(--surface, #ffffff); border-radius: 12px; padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+
+    <div class="kmeans-control-header" style="margin-bottom: 18px;">
+        <h3 style="margin: 0; font-size: 1.1rem; letter-spacing: 0.5px; text-transform: uppercase; color: var(--navy-950);">
+            DBSCAN HYPERPARAMETERS
+        </h3>
+    </div>
+
+    <form method="POST" action="{{ url_for('dbscan') }}">
+
+        <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px;">
+
+            <!-- EPSILON CONTROL -->
+            <div class="form-group" style="flex: 1.5; min-width: 220px;">
+                <label for="eps_mode" style="font-weight: 600; display: block; margin-bottom: 6px;">
+                    Epsilon (&epsilon;) Selection:
+                </label>
+                <select id="eps_mode" name="eps_mode" onchange="toggleEpsInput()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border, #e3e9ee);">
+                    <option value="auto" {% if is_auto %}selected{% endif %}>
+                        Auto-Derived (Knee Locator K-Distance Graph)
+                    </option>
+                    <option value="manual" {% if not is_auto %}selected{% endif %}>
+                        Manual Epsilon Value
+                    </option>
+                </select>
+            </div>
+
+            <!-- MANUAL EPSILON VALUE -->
+            <div class="form-group" id="manual_eps_wrapper" style="flex: 1; min-width: 160px; display: {% if not is_auto %}block{% else %}none{% endif %};">
+                <label for="eps_val" style="font-weight: 600; display: block; margin-bottom: 6px;">
+                    Eps Value (&epsilon;):
+                </label>
+                <input type="number" step="0.001" id="eps_val" name="eps_val" value="{{ eps if eps else 0.5 }}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border, #e3e9ee);">
+            </div>
+
+            <!-- MIN SAMPLES -->
+            <div class="form-group" style="flex: 1; min-width: 160px;">
+                <label for="min_samples" style="font-weight: 600; display: block; margin-bottom: 6px;">
+                    Min Samples (min_samples):
+                </label>
+                <input type="number" id="min_samples" name="min_samples" min="2" max="50" value="{{ min_samples if min_samples else 5 }}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border, #e3e9ee);">
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <div class="form-group" style="min-width: 160px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px 20px; font-weight: 600; border-radius: 8px; background: #18a6a8; color: #ffffff; border: none; cursor: pointer;">
+                    Run DBSCAN
+                </button>
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- =====================================================
+     ERROR MESSAGE
+===================================================== -->
+
+{% if error %}
+<div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px; margin-bottom: 24px; color: #991b1b;">
+    <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+
+
+<!-- =====================================================
+     RESULTS DASHBOARD
+===================================================== -->
+
+{% if results %}
+
+<!-- METRICS KPI CARDS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px;">
+
+    <div style="background: #ffffff; padding: 18px; border-radius: 10px; border-top: 4px solid #18a6a8; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.82rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Clusters</div>
+        <div style="font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-top: 4px;">{{ results.clusters_count }}</div>
+        <div style="font-size: 0.78rem; color: #10b981; margin-top: 2px;">Excludes Noise (-1)</div>
+    </div>
+
+    <div style="background: #ffffff; padding: 18px; border-radius: 10px; border-top: 4px solid #3b82f6; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.82rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Core Points</div>
+        <div style="font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-top: 4px;">{{ results.core_count }}</div>
+        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Dense Core Region</div>
+    </div>
+
+    <div style="background: #ffffff; padding: 18px; border-radius: 10px; border-top: 4px solid #f59e0b; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.82rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Border Points</div>
+        <div style="font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-top: 4px;">{{ results.border_count }}</div>
+        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Cluster Edge Points</div>
+    </div>
+
+    <div style="background: #ffffff; padding: 18px; border-radius: 10px; border-top: 4px solid #ef4444; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.82rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Noise Points</div>
+        <div style="font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-top: 4px;">{{ results.noise_count }}</div>
+        <div style="font-size: 0.78rem; color: #ef4444; margin-top: 2px;">Outliers Label (-1)</div>
+    </div>
+
+    <div style="background: #ffffff; padding: 18px; border-radius: 10px; border-top: 4px solid #8b5cf6; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.82rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Epsilon (&epsilon;)</div>
+        <div style="font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-top: 4px;">{{ results.eps }}</div>
+        <div style="font-size: 0.78rem; color: #8b5cf6; margin-top: 2px;">
+            {% if results.is_auto %}Knee Point derived{% else %}Manual setting{% endif %}
+        </div>
+    </div>
+
+    <div style="background: #ffffff; padding: 18px; border-radius: 10px; border-top: 4px solid #06b6d4; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.82rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Silhouette Score</div>
+        <div style="font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-top: 4px;">
+            {% if results.silhouette_score is not none %}{{ results.silhouette_score }}{% else %}N/A{% endif %}
+        </div>
+        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Cluster separation</div>
+    </div>
+
+</div>
+
+
+<!-- VISUAL CHARTS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; margin-bottom: 28px;">
+
+    <!-- K-DISTANCE KNEE CHART -->
+    <div style="background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm);">
+        <h4 style="margin: 0 0 14px 0; font-size: 1.05rem; color: #0f172a;">K-Distance Knee Graph (Eps Detection)</h4>
+        {% if results.k_distance_chart %}
+        <img src="{{ url_for('static', filename=results.k_distance_chart) }}" alt="K-Distance Graph" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;">
+        {% else %}
+        <p style="color: #64748b;">K-Distance chart not available.</p>
+        {% endif %}
+    </div>
+
+    <!-- CLUSTER SCATTER PLOT -->
+    <div style="background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm);">
+        <h4 style="margin: 0 0 14px 0; font-size: 1.05rem; color: #0f172a;">DBSCAN Clusters & Point Classifications</h4>
+        {% if results.cluster_chart %}
+        <img src="{{ url_for('static', filename=results.cluster_chart) }}" alt="DBSCAN Clusters" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;">
+        {% else %}
+        <p style="color: #64748b;">Cluster scatter plot not available.</p>
+        {% endif %}
+    </div>
+
+</div>
+
+
+<!-- CLUSTER BREAKDOWN TABLE -->
+<div style="background: #ffffff; border-radius: 12px; padding: 22px; box-shadow: var(--shadow-sm); margin-bottom: 30px;">
+    <h3 style="margin: 0 0 16px 0; font-size: 1.1rem; color: #0f172a; text-transform: uppercase;">
+        DBSCAN Cluster Profiles & Classification Summary
+    </h3>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+            <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
+                    <th style="padding: 12px;">Group</th>
+                    <th style="padding: 12px;">Total Points</th>
+                    <th style="padding: 12px;">Core Points</th>
+                    <th style="padding: 12px;">Border Points</th>
+                    <th style="padding: 12px;">Avg Price</th>
+                    <th style="padding: 12px;">Avg SqFt</th>
+                    <th style="padding: 12px;">Avg Beds</th>
+                    <th style="padding: 12px;">Avg Baths</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results.cluster_summaries %}
+                <tr style="border-bottom: 1px solid #f1f5f9; {% if row.is_noise %}background: #fff5f5;{% endif %}">
+                    <td style="padding: 12px; font-weight: 600; color: {% if row.is_noise %}#ef4444{% else %}#18a6a8{% endif %};">
+                        {{ row.name }}
+                    </td>
+                    <td style="padding: 12px; font-weight: 600;">{{ row.count }}</td>
+                    <td style="padding: 12px; color: #3b82f6;">{{ row.core_count }}</td>
+                    <td style="padding: 12px; color: #f59e0b;">{{ row.border_count }}</td>
+                    <td style="padding: 12px;">${{ "{:,.2f}".format(row.avg_price) }}</td>
+                    <td style="padding: 12px;">{{ "{:,.0f}".format(row.avg_sqft) }} sq ft</td>
+                    <td style="padding: 12px;">{{ row.avg_beds }}</td>
+                    <td style="padding: 12px;">{{ row.avg_baths }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+function toggleEpsInput() {
+    const epsMode = document.getElementById("eps_mode").value;
+    const manualWrapper = document.getElementById("manual_eps_wrapper");
+    if (epsMode === "manual") {
+        manualWrapper.style.display = "block";
+    } else {
+        manualWrapper.style.display = "none";
+    }
+}
+</script>
+{% endblock %}

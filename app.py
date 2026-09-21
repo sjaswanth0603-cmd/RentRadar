@@ -11,6 +11,7 @@ from decision_trees import run_decision_trees
 from model_manager import manager
 from kmeans import run_kmeans
 from hierarchical_clustering import run_hierarchical_clustering
+from DBSCAN import run_dbscan
 
 
 app = Flask(__name__)
@@ -300,6 +301,51 @@ def hierarchical_clustering():
         n_clusters=n_clusters,
         linkage=linkage,
         metric="euclidean"
+    )
+
+
+# =========================================================
+# 7C. DBSCAN CLUSTERING
+# =========================================================
+
+@app.route("/dbscan", methods=["GET", "POST"])
+@app.route("/dbscan-clustering", methods=["GET", "POST"])
+def dbscan():
+
+    error = None
+    results = None
+
+    eps_mode = request.form.get("eps_mode", "auto")
+    raw_eps_val = request.form.get("eps_val", "")
+    min_samples = request.form.get("min_samples", 5, type=int)
+
+    if eps_mode == "manual" and raw_eps_val:
+        try:
+            eps = float(raw_eps_val)
+            is_auto = False
+        except (ValueError, TypeError):
+            eps = "auto"
+            is_auto = True
+    else:
+        eps = "auto"
+        is_auto = True
+
+    try:
+        results = run_dbscan(
+            eps=eps,
+            min_samples=min_samples
+        )
+    except Exception as e:
+        error = f"Error running DBSCAN clustering: {e}"
+
+    return render_template(
+        "dbscan.html",
+        active="dbscan",
+        results=results,
+        error=error,
+        eps=eps if eps != "auto" else (results.get("eps") if results else 0.5),
+        is_auto=is_auto,
+        min_samples=min_samples
     )
 
 
