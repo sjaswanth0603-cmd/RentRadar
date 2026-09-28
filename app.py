@@ -1,6 +1,6 @@
 import os
 import socket
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file
 
 from load_data import get_data_summary
 from apartment_eda import run_eda
@@ -101,6 +101,24 @@ def preprocessing():
         results=summary,
         error=error
     )
+
+
+@app.route("/download-preprocessed-excel")
+def download_preprocessed_excel():
+    excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets", "apartments_preprocessed.xlsx")
+    if not os.path.exists(excel_path):
+        from export_preprocessed_dataset import main as run_export
+        run_export()
+    return send_file(excel_path, as_attachment=True, download_name="apartments_preprocessed.xlsx")
+
+
+@app.route("/download-preprocessed-csv")
+def download_preprocessed_csv():
+    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets", "apartments_preprocessed.csv")
+    if not os.path.exists(csv_path):
+        from export_preprocessed_dataset import main as run_export
+        run_export()
+    return send_file(csv_path, as_attachment=True, download_name="apartments_preprocessed.csv")
 
 
 # =========================================================

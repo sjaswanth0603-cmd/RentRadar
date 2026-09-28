@@ -61,7 +61,11 @@
 <!-- Visualizations Stack (Strictly ONE chart per card) -->
 <h3 style="margin-top: 35px; margin-bottom: 20px;">Diagnostic Visualizations</h3>
 
-<div class="chart-stack" style="display: flex; flex-direction: column; gap: 28px;">
+    <!-- Top Value Drivers (Coefficients) -->
+    <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+        <img src="{{ url_for('static', filename='charts/linear_regression_coefficients.png') }}" alt="Top High-Value Predictor Coefficients" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">
+    </div>
+
     <!-- Actual vs Predicted -->
     <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
         <img src="{{ url_for('static', filename='charts/actual_vs_predicted.png') }}" alt="Actual vs Predicted Rental Price" style="width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; margin: 0 auto;">

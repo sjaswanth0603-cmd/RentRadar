@@ -3,9 +3,9 @@
 {% block title %}RentRadar - Decision Trees & Ensembles{% endblock %}
 
 {% block content %}
-<h2>Decision Trees &amp; Ensemble Learning</h2>
+<h2>Decision Trees</h2>
 <p class="page-subtitle" style="color: #666; margin-top: -20px; margin-bottom: 24px; font-size: 15px;">
-    Comparative benchmarking of non-linear tree algorithms, bagging ensembles, and gradient boosted architectures.
+    Explore decision tree and bagging ensemble regression models on the nationwide apartment rental dataset.
 </p>
 
 {% if error %}
@@ -15,97 +15,245 @@
 {% endif %}
 
 {% if results %}
-<!-- Algorithm Selector Dropdown -->
-<div class="data-card" style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #cbd5e1;">
+<!-- Algorithm Selector Dropdown (Matching Reference UI) -->
+<div class="data-card" style="margin-bottom: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 22px;">
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-        <div>
-            <label for="algoSelect" style="font-weight: bold; color: #1f3a5f; font-size: 16px; margin-right: 12px;">
-                Select Algorithm Architecture (7 Models):
+        <div style="flex: 1; min-width: 320px;">
+            <label for="algoSelect" style="font-weight: 700; color: #1f3a5f; font-size: 16px; margin-right: 12px; display: inline-block; margin-bottom: 6px;">
+                Select Algorithm:
             </label>
-            <select id="algoSelect" onchange="switchModel(this.value)" style="padding: 10px 16px; border: 1px solid #94a3b8; border-radius: 6px; font-size: 15px; font-weight: 600; color: #1f3a5f; background: white; cursor: pointer; min-width: 280px;">
+            <br>
+            <select id="algoSelect" onchange="switchModel(this.value)" style="padding: 10px 16px; border: 1px solid #94a3b8; border-radius: 6px; font-size: 15px; font-weight: 600; color: #1f3a5f; background: white; cursor: pointer; min-width: 320px; max-width: 100%;">
                 {% for key in results.algorithm_keys %}
                 <option value="{{ key }}" {% if key == results.default_model %}selected{% endif %}>
-                    {{ results.models[key].name }} ({{ results.models[key].family }})
+                    {{ results.models[key].dropdown_name }}
                 </option>
                 {% endfor %}
             </select>
+            <div id="activeModelLabel" style="font-size: 13px; color: #64748b; margin-top: 8px;">
+                Currently active: <strong id="activeModelName" style="color: #1f3a5f;">{{ results.models[results.default_model].dropdown_name }}</strong>
+            </div>
         </div>
-        <div>
-            <span style="font-size: 13px; color: #64748b;">Champion Architecture:</span>
-            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 13px; margin-left: 5px;">
+        <div style="text-align: right;">
+            <span style="font-size: 13px; color: #64748b;">Champion Architecture:</span><br>
+            <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 13.5px; margin-top: 4px; border: 1px solid #bae6fd;">
                 🏆 {{ results.champion.name }} (Test R²: {{ results.champion.test_r2 }})
             </span>
         </div>
     </div>
 </div>
 
-<!-- Dynamic Single Results Card (Controlled by Dropdown) -->
+<!-- Dynamic Model Cards (Controlled by Selector) -->
 {% for key, m in results.models.items() %}
-<div id="model-card-{{ key }}" class="algo-detail-card data-card" style="margin-bottom: 30px; {% if key != results.default_model %}display: none;{% endif %}">
+<div id="model-card-{{ key }}" class="algo-detail-card" style="margin-bottom: 30px; {% if key != results.default_model %}display: none;{% endif %}">
     
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+    <!-- Model Header Badge -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
         <div>
             <h3 style="margin: 0; color: #1f3a5f; font-size: 22px;">{{ m.name }}</h3>
-            <span style="display: inline-block; margin-top: 5px; background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+            <span style="display: inline-block; margin-top: 6px; background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 4px; font-size: 12.5px; font-weight: 600;">
                 {{ m.family }}
             </span>
             <p style="color: #64748b; font-size: 14px; margin: 8px 0 0 0;">{{ m.description }}</p>
         </div>
-        <div style="text-align: right;">
-            <span style="font-size: 13px; color: #64748b;">Training Runtime:</span><br>
-            <strong style="color: #1f3a5f; font-size: 16px;">{{ m.training_time }}s</strong>
+        <div style="text-align: right; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 14px; border-radius: 6px;">
+            <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Training Runtime</span><br>
+            <strong style="color: #1f3a5f; font-size: 17px;">{{ m.training_time }}s</strong>
         </div>
     </div>
 
-    <!-- Core Metrics Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 24px;">
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">Test R² Score</div>
-            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">{{ m.test_r2 }}</div>
-            <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">Train R²: {{ m.train_r2 }}</div>
+    <!-- Side-by-Side: Model Architecture & Classification/Regression Performance (Matching Screenshot 2) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        
+        <!-- Left Table: Model Architecture & Dataset -->
+        <div class="data-card" style="margin-bottom: 0;">
+            <h3 style="margin-top: 0; margin-bottom: 12px; color: #1f3a5f; font-size: 16px;">Model Architecture &amp; Dataset</h3>
+            <table class="summary-table" style="width: 100%;">
+                <tbody>
+                    <tr>
+                        <td style="width: 160px; font-weight: 600; color: #475569;">Algorithm</td>
+                        <td style="color: #1e293b; font-weight: 600;">{{ m.name }} ({{ m.family }})</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">Target Variable</td>
+                        <td style="color: #1e293b;">{{ m.metadata.target_variable }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">Training Samples</td>
+                        <td style="color: #1e293b; font-weight: 600;">{{ m.metadata.training_samples }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">Testing Samples</td>
+                        <td style="color: #1e293b; font-weight: 600;">{{ m.metadata.testing_samples }}</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">Features Evaluated</td>
+                        <td style="color: #1e293b;">{{ m.metadata.features_evaluated }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">Mean Absolute Error</div>
-            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">${{ "{:,.2f}".format(m.mae) }}</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Average Deviation</div>
+
+        <!-- Right Table: Regression Performance -->
+        <div class="data-card" style="margin-bottom: 0;">
+            <h3 style="margin-top: 0; margin-bottom: 12px; color: #1f3a5f; font-size: 16px;">Regression Performance</h3>
+            <table class="summary-table" style="width: 100%;">
+                <tbody>
+                    <tr>
+                        <td style="width: 160px; font-weight: 600; color: #475569;">Test R² Score</td>
+                        <td><strong style="color: #1f3a5f; font-size: 16px;">{{ m.test_r2 }}</strong> <span style="font-size: 12px; color: #16a34a; margin-left: 6px;">(Train: {{ m.train_r2 }})</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">Mean Absolute Error</td>
+                        <td><strong style="color: #1f3a5f;">${{ "{:,.2f}".format(m.mae) }}</strong> <span style="font-size: 12px; color: #64748b;">(Avg Deviation)</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">Root Mean Squared Error</td>
+                        <td><strong>${{ "{:,.2f}".format(m.rmse) }}</strong> <span style="font-size: 12px; color: #64748b;">(Outlier Penalty)</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">MAPE Error Rate</td>
+                        <td><strong>{{ m.mape }}%</strong> <span style="font-size: 12px; color: #64748b;">(Relative Error)</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; color: #475569;">Evaluation Split</td>
+                        <td>{{ m.metadata.evaluation_split }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">Root Mean Squared Error</div>
-            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">${{ "{:,.2f}".format(m.rmse) }}</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Penalizes Outliers</div>
-        </div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; text-align: center;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold;">MAPE Error Rate</div>
-            <div style="font-size: 24px; font-weight: bold; color: #1f3a5f; margin-top: 4px;">{{ m.mape }}%</div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Relative Accuracy</div>
-        </div>
+
     </div>
 
-    <!-- Feature Importances Breakdown -->
+    <!-- Prediction Error & Tolerance Breakdown (Matching Reference Screenshot 2 Format) -->
+    <div class="data-card" style="margin-bottom: 24px;">
+        <h3 style="margin-top: 0; margin-bottom: 6px; color: #1f3a5f; font-size: 16px;">Prediction Accuracy &amp; Tolerance Breakdown</h3>
+        <p style="color: #64748b; font-size: 13.5px; margin-top: 0; margin-bottom: 14px;">
+            Granular evaluation of predicted rental pricing against ground-truth lease figures across held-out unseen properties.
+        </p>
+        <table class="summary-table" style="width: 100%;">
+            <tbody>
+                <tr>
+                    <td style="width: 380px; font-weight: 600;">High Precision Estimates (Within &plusmn;5% of Actual Rent)</td>
+                    <td>
+                        <strong style="color: #166534;">{{ "{:,}".format(m.breakdown.within_5_count) }} listings</strong>
+                        <span style="display: inline-block; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-left: 8px;">{{ m.breakdown.within_5_pct }}% of test set</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Close Market Range (Within &plusmn;10% of Actual Rent)</td>
+                    <td>
+                        <strong style="color: #1e40af;">{{ "{:,}".format(m.breakdown.within_10_count) }} listings</strong>
+                        <span style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-left: 8px;">{{ m.breakdown.within_10_pct }}% of test set</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Standard Market Range (Within &plusmn;20% of Actual Rent)</td>
+                    <td>
+                        <strong style="color: #334155;">{{ "{:,}".format(m.breakdown.within_20_count) }} listings</strong>
+                        <span style="display: inline-block; background: #e2e8f0; color: #334155; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-left: 8px;">{{ m.breakdown.within_20_pct }}% of test set</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Outlier Deviations (&gt; 20% Variance from Market Rent)</td>
+                    <td>
+                        <strong style="color: #991b1b;">{{ "{:,}".format(m.breakdown.beyond_20_count) }} listings</strong>
+                        <span style="display: inline-block; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-left: 8px;">{{ m.breakdown.beyond_20_pct }}% of test set</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 600;">Valuation Error Directional Bias</td>
+                    <td>
+                        <span style="color: #0369a1; font-weight: 600;">Under-Valued: {{ m.breakdown.under_valued_pct }}%</span>
+                        <span style="color: #94a3b8; margin: 0 8px;">|</span>
+                        <span style="color: #166534; font-weight: 600;">Within &plusmn;$100: {{ m.breakdown.balanced_pct }}%</span>
+                        <span style="color: #94a3b8; margin: 0 8px;">|</span>
+                        <span style="color: #b45309; font-weight: 600;">Over-Valued: {{ m.breakdown.over_valued_pct }}%</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Feature Importance Ranking (Matching Reference Screenshot 2 & 3) -->
     {% if m.feature_importances %}
-    <h4 style="text-align: left; margin: 18px 0 12px 0; color: #1f3a5f; font-size: 16px;">
-        Top Primary Feature Importances (Normalized Contribution %):
-    </h4>
-    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
-        {% for feat in m.feature_importances %}
-        <div>
-            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px;">
-                <span style="font-weight: 600; color: #334155;">{{ feat.feature }}</span>
-                <span style="color: #1f3a5f; font-weight: bold;">{{ feat.importance }}%</span>
-            </div>
-            <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
-                <div style="width: {{ feat.importance }}%; background: #5ba0d7; height: 100%; border-radius: 4px;"></div>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="data-card" style="margin-bottom: 28px;">
+        <h3 style="margin-top: 0; margin-bottom: 6px; color: #1f3a5f; font-size: 16px;">Feature Importance Ranking</h3>
+        <p style="color: #64748b; font-size: 13.5px; margin-top: 0; margin-bottom: 14px;">
+            Relative impact and normalized percentage contribution of primary tabular predictors for {{ m.name }}.
+        </p>
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 50px; text-align: center;">#</th>
+                    <th>Feature</th>
+                    <th style="width: 180px;">Relative Importance</th>
+                    <th style="width: 260px;">Impact Share</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for feat in m.feature_importances %}
+                <tr>
+                    <td style="text-align: center; color: #64748b; font-weight: 600;">{{ feat.rank }}</td>
+                    <td>
+                        <strong style="color: #1e293b;">{{ feat.feature }}</strong>
+                        <span style="display: block; font-size: 11.5px; color: #94a3b8; font-family: monospace;">{{ feat.raw_feature }}</span>
+                    </td>
+                    <td><strong style="color: #1f3a5f; font-family: monospace;">{{ "{:.4f}".format(feat.score) }}</strong></td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1; background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
+                                <div style="width: {{ feat.importance }}%; background: #2b82d9; height: 100%; border-radius: 5px;"></div>
+                            </div>
+                            <span style="font-weight: 600; color: #334155; font-size: 12.5px; min-width: 45px;">{{ feat.importance }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     {% endif %}
 
-    <!-- Hyperparameters -->
-    <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #475569;">
+    <!-- Model Visualizations (Matching Reference Screenshot 3 & 4) -->
+    <h3 style="margin-top: 30px; margin-bottom: 16px; color: #1f3a5f; font-size: 20px;">Model Visualizations</h3>
+    <div class="chart-stack" style="display: flex; flex-direction: column; gap: 24px; margin-bottom: 28px;">
+        
+        <!-- Feature Importance Horizontal Bar Chart (Exact Recreation) -->
+        <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+            <img src="{{ url_for('static', filename='charts/' + m.charts.importance) }}" 
+                 alt="{{ m.name }} Feature Importance" 
+                 style="width: 100%; height: auto; max-height: 520px; object-fit: contain; display: block; margin: 0 auto;">
+        </div>
+
+        <!-- Actual vs Predicted Diagnostic Scatter Plot -->
+        <div class="chart-card" style="background: white; border: 1px solid #e1e7ee; border-radius: 8px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+            <img src="{{ url_for('static', filename='charts/' + m.charts.diagnostic) }}" 
+                 alt="{{ m.name }} Actual vs Predicted Rental Price" 
+                 style="width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; margin: 0 auto;">
+        </div>
+
+    </div>
+
+    <!-- Humanised Operational Real Estate Insights -->
+    {% if m.insights %}
+    <div class="info-box" style="margin-bottom: 24px;">
+        <h4 style="text-align: left; margin-top: 0; color: #1f3a5f; font-size: 15.5px;">
+            Humanised Valuation &amp; Market Insights ({{ m.name }}):
+        </h4>
+        <ul style="margin-bottom: 0; padding-left: 20px; color: #334155;">
+            {% for item in m.insights %}
+            <li style="margin-bottom: 6px;">{{ item }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Configured Hyperparameters -->
+    <div style="background: #f1f5f9; padding: 12px 16px; border-radius: 6px; font-size: 13px; color: #475569; margin-bottom: 10px; border: 1px solid #e2e8f0;">
         <strong>Configured Hyperparameters:</strong> 
         {% for hp, val in m.hyperparams.items() %}
-            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin-right: 6px;">{{ hp }}={{ val }}</code>
+            <code style="background: white; padding: 3px 8px; border-radius: 4px; margin-right: 6px; border: 1px solid #cbd5e1; font-size: 12.5px;">{{ hp }}={{ val }}</code>
         {% endfor %}
     </div>
 
@@ -170,6 +318,8 @@
 {% endif %}
 
 <script>
+var algorithmNames = {{ results.algorithm_names|tojson if results else '{}' }};
+
 function switchModel(selectedId) {
     var cards = document.querySelectorAll('.algo-detail-card');
     cards.forEach(function(card) {
@@ -178,6 +328,10 @@ function switchModel(selectedId) {
     var target = document.getElementById('model-card-' + selectedId);
     if (target) {
         target.style.display = 'block';
+    }
+    var activeLabel = document.getElementById('activeModelName');
+    if (activeLabel && algorithmNames[selectedId]) {
+        activeLabel.textContent = algorithmNames[selectedId];
     }
 }
 </script>

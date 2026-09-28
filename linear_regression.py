@@ -80,8 +80,9 @@ def run_linear_regression(force_retrain: bool = False) -> dict:
         try:
             with open(CACHE_METRICS_PATH, "rb") as f:
                 cached_data = pickle.load(f)
-            # Ensure plots exist on disk
-            if os.path.exists(_chart_path("actual_vs_predicted.png")) and os.path.exists(_chart_path("residuals.png")):
+            if (os.path.exists(_chart_path("actual_vs_predicted.png")) and 
+                os.path.exists(_chart_path("residuals.png")) and 
+                os.path.exists(_chart_path("linear_regression_coefficients.png"))):
                 return cached_data
         except Exception:
             pass
@@ -127,6 +128,20 @@ def run_linear_regression(force_retrain: bool = False) -> dict:
              "impact": "Positive" if coef > 0 else "Negative"}
             for feat, coef in top_positive.items()
         ]
+
+        # Horizontal Bar Chart for Top Coefficient Drivers
+        if top_drivers:
+            fig, ax = plt.subplots(figsize=(9, 5.0), facecolor="white")
+            feat_labels = [d["feature"].replace("state_", "State: ").replace("_", " ").title() for d in top_drivers]
+            coef_vals = [d["coefficient"] for d in top_drivers]
+            y_pos = np.arange(len(feat_labels))
+            ax.barh(y_pos, coef_vals, height=0.62, color="#2b82d9", edgecolor="none")
+            ax.set_yticks(y_pos)
+            ax.set_yticklabels(feat_labels, fontsize=10, color="#1e293b", fontweight="500")
+            ax.invert_yaxis()
+            _apply_theme(ax, "Ridge Regression - Primary High-Value Predictor Coefficients", "Estimated Monthly Rent Impact ($ USD)", "")
+            ax.grid(axis="x", color="#e2e8f0", linestyle="-", linewidth=0.9, alpha=0.9)
+            _save("linear_regression_coefficients.png")
     except Exception as e:
         print(f"Warning extracting feature names: {e}")
         top_drivers = []

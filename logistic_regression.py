@@ -16,7 +16,7 @@ from sklearn.metrics import (
     confusion_matrix,
     classification_report
 )
-from preprocessing import preprocess_classification_data
+from preprocessing import preprocess_classification_data, get_feature_names
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHARTS_DIR = os.path.join(BASE_DIR, "static", "charts")
@@ -70,7 +70,8 @@ def run_logistic_regression(force_retrain: bool = False) -> dict:
         try:
             with open(CACHE_METRICS_PATH, "rb") as f:
                 cached_data = pickle.load(f)
-            if os.path.exists(_chart_path("logistic_regression_confusion_matrix.png")):
+            if (os.path.exists(_chart_path("logistic_regression_confusion_matrix.png")) and 
+                os.path.exists(_chart_path("logistic_regression_feature_importance.png"))):
                 return cached_data
         except Exception:
             pass
@@ -146,6 +147,33 @@ def run_logistic_regression(force_retrain: bool = False) -> dict:
     plt.tight_layout()
     plt.savefig(_chart_path("logistic_regression_confusion_matrix.png"), dpi=150, bbox_inches="tight", facecolor="white")
     plt.close("all")
+
+    # Feature Importance for Classification (Top Drivers of Premium Rental Tier)
+    try:
+        feature_names = get_feature_names(preprocessor)
+        premium_coefs = model_l2.coef_[2]
+        top_idx = np.argsort(premium_coefs)[::-1][:8]
+        top_names = [feature_names[i].replace("num__", "").replace("cat__", "").replace("remainder__", "").replace("state_", "State: ").replace("_", " ").title() for i in top_idx]
+        top_vals = [float(premium_coefs[i]) for i in top_idx]
+
+        fig, ax = plt.subplots(figsize=(8.5, 5.0), facecolor="white")
+        y_pos = np.arange(len(top_names))
+        ax.barh(y_pos, top_vals, height=0.62, color="#2b82d9", edgecolor="none")
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(top_names, fontsize=10, color="#1e293b", fontweight="500")
+        ax.invert_yaxis()
+        ax.set_title("Logistic Regression - Top Predictive Features (Premium Tier)", fontsize=13, fontweight="bold", color=TITLE_COLOR, pad=12)
+        ax.set_xlabel("Log-Odds Impact on Premium Tier Classification", fontsize=10.5, color=LABEL_COLOR, labelpad=8)
+        ax.grid(axis="x", color="#e2e8f0", linestyle="-", linewidth=0.9, alpha=0.9)
+        for spine in ["top", "right", "left"]:
+            ax.spines[spine].set_visible(False)
+        ax.spines["bottom"].set_color("#cbd5e1")
+        ax.tick_params(colors=LABEL_COLOR, labelsize=9.5)
+        plt.tight_layout()
+        plt.savefig(_chart_path("logistic_regression_feature_importance.png"), dpi=150, bbox_inches="tight", facecolor="white")
+        plt.close("all")
+    except Exception as e:
+        print(f"Warning generating logreg feature importance: {e}")
 
     # Save best model to disk for live predictor use
     with open(os.path.join(MODELS_DIR, "logistic_regression.pkl"), "wb") as f:
