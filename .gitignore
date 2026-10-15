@@ -4,3 +4,4 @@ __pycache__/
 .idea/
 datasets/.cache_dedup.pkl
 datasets/*.pkl
+scratch/
